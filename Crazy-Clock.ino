@@ -74,8 +74,8 @@ unsigned char time_in_step;
 
 unsigned char half_tick_placeholder;
 
-// This delay loop is magical because we know the timer is ticking at 1 kHz.
-// So we just wait until it counts N times and that will be an N msec delay.
+// This delay loop is magical because we know the timer is ticking at 500 Hz.
+// So we just wait until it counts N/2 times and that will be an N msec delay.
 static void delay_ms(unsigned char msec) {
    unsigned char start_time = TCNT0;
    while(TCNT0 - start_time < msec / 2) ; // sit-n-spin
