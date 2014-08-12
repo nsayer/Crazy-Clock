@@ -45,6 +45,7 @@
 // These are the values for the randomly constructed instruction list
 #define HALF_SPEED 1
 #define NORMAL_SPEED 2
+// Double-speed is a misnomer. It's actually 1.5x speed.
 #define DOUBLE_SPEED 3
 
 // This *must* be even! It's also a bit of a balancing act between allowing
@@ -203,11 +204,21 @@ void loop() {
           sleep_mode();
         break;
       case DOUBLE_SPEED:
-        for(int i = 0; i < 2; i++) {
+        if (half_tick_placeholder) {
+          // This is a very tricky approximation of "one-and-a-half" time.
+          // We need to tick 3 times in 2 seconds. But remember, the sum
+          // of each must be IRQS_PER_SECOND, which means revisiting
+          // this trickiness if it ever changes from being 10.
           doTick();
-          for(int j = 0; j < ((IRQS_PER_SECOND / 2) - 1); j++)
-            sleep_mode();
+          for(int i = 0; i < 6; i++) sleep_mode();
+          doTick();
+          for(int i = 0; i < 2; i++) sleep_mode();
+        } else {
+          for(int i = 0; i < 3; i++) sleep_mode();
+          doTick();
+          for(int i = 0; i < 6; i++) sleep_mode();
         }
+        half_tick_placeholder = !half_tick_placeholder;
         break;
     }
     if (++time_in_step >= time_per_step) {
