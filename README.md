@@ -5,7 +5,7 @@ This is a lavet stepper motor driver sketch inspired (indirectly) by https://git
 
 This version changes the algorithm somewhat with the aim of appearing to be a much smoother operation.
 
-The initial hardware version uses a 16.384 MHz crystal divided down to a final interrupt source of 10 Hz. The
+The initial hardware version uses a 4.096 MHz crystal divided down to a final interrupt source of 10 Hz. The
 sketch uses sleep_mode() to mark time.
 
 The chip can tick one of three ways - half-time, normal time or double-time. It works by randomly creating an instruction list.
