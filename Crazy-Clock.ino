@@ -36,13 +36,17 @@
 #include <avr/sleep.h>
 #include <avr/power.h>
 
-// clock solenoid pins
-#define P0 0
-#define P1 1
-#define P_UNUSED 2
-
 // Update the PRNG seed daily
 #define SEED_UPDATE_INTERVAL (86400)
+
+// These are the values for the randomly constructed instruction list
+#define HALF_SPEED 1
+#define NORMAL_SPEED 2
+#define DOUBLE_SPEED 3
+
+// This *must* be even! It's also a bit of a balancing act between allowing
+// for whackiness, but not allowing the clock to drift too far.
+#define LIST_LENGTH 14
 
 // We're going to set up a timer interrupt for every 100 msec, so what's 1/.1?
 // Note that while we're actually doing stuff, we *must* insure that we never
@@ -50,29 +54,18 @@
 // interrupts, we're just waiting for each one in turn.
 #define IRQS_PER_SECOND (10)
 
+// clock solenoid pins
+#define P0 0
+#define P1 1
+#define P_UNUSED 2
+
 // How long is each tick? In this case, we're going to busy-wait on the timer.
 #define TICK_LENGTH (35)
 
+// This will alternate the ticks
 #define TICK_PIN (lastTick == P0?P1:P0)
 
 unsigned char lastTick;
-
-#define HALF_SPEED 1
-#define NORMAL_SPEED 2
-#define DOUBLE_SPEED 3
-
-// This *must* be even!
-#define LIST_LENGTH 14
-
-unsigned char instruction_list[LIST_LENGTH];
-
-unsigned char place_in_list;
-
-unsigned char time_per_step;
-
-unsigned char time_in_step;
-
-unsigned char half_tick_placeholder;
 
 // This delay loop is magical because we know the timer is ticking at 500 Hz.
 // So we just wait until it counts N/2 times and that will be an N msec delay.
@@ -102,15 +95,14 @@ ISR(TIMER0_COMPA_vect) {
 }
 
 void setup() {
-  clock_prescale_set(clock_div_32);
+  clock_prescale_set(clock_div_8);
   power_adc_disable();
   power_usi_disable();
   power_timer1_disable();
-  //PRR = _BV(PRADC) | _BV(PRTIM1) | _BV(PRUSI); // everything off but timer 0.
   TCCR0A = _BV(WGM01); // mode 2 - CTC
   TCCR0B = _BV(CS02) | _BV(CS00); // prescale = 1024
-  // xtal freq = 16.384 MHz.
-  // CPU freq = 16.384 MHz / 32 = 512 kHz
+  // xtal freq = 4.096 MHz.
+  // CPU freq = 4.096 MHz / 8 = 512 kHz
   // count freq = 512 kHz / 1024 = 500 Hz
   OCR0A = 50; // 10 Hz
   TIMSK = _BV(OCIE0A); // OCR0A interrupt only.
@@ -125,7 +117,6 @@ void setup() {
   digitalWrite(P1, LOW);
   
   lastTick = P0;
-  place_in_list = LIST_LENGTH; // force a reset.
     
   // Try and perturb the PRNG as best as we can
   unsigned long seed = EEPROM.read(0);
@@ -138,6 +129,12 @@ void setup() {
 
 void loop() {
   unsigned long seedUpdateAfter = SEED_UPDATE_INTERVAL;
+  unsigned char instruction_list[LIST_LENGTH];
+  unsigned char place_in_list = LIST_LENGTH; // force a reset.
+  unsigned char time_per_step = 0; // This is moot - avoids an incorrect warning
+  unsigned char time_in_step = 0; // This is also moot - avoids another incorrect warning
+  unsigned char half_tick_placeholder = 0;
+  
   while(1){
     // The intent is for the top of this loop to be hit once per second
     if (--seedUpdateAfter == 0) {
