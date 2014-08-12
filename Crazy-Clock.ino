@@ -74,6 +74,7 @@ static void delay_ms(unsigned char msec) {
    while(TCNT0 - start_time < msec / 2) ; // sit-n-spin
 }
 
+// Each call to doTick() will "eat" a single one of our interrupt "ticks"
 static void doTick() {
   digitalWrite(TICK_PIN, HIGH);
   delay_ms(TICK_LENGTH);
@@ -166,12 +167,14 @@ void loop() {
       // This must be even!
       // It also should be long enough to establish a pattern
       // before changing.
-      time_per_step = random(5) * 2 + 10;
+      time_per_step = random(5) * 4 + 10;
       place_in_list = 0;
       time_in_step = 0;
     }
     
-      // What are we doing right now?
+    // What are we doing right now?
+    // Each case must consume 10 clock ticks - that is,
+    // each must call either doTick() or sleep_mode() a total of 10 times.  
     switch(instruction_list[place_in_list]) {
       case HALF_SPEED:
         if (half_tick_placeholder) {
@@ -192,12 +195,12 @@ void loop() {
       case DOUBLE_SPEED:
         for(int i = 0; i < 2; i++) {
           doTick();
-          for(int j = 0; j < 4; j++)
+          for(int j = 0; j < ((IRQS_PER_SECOND / 2) - 1); j++)
             sleep_mode();
         }
         break;
     }
-    if (time_in_step++ >= time_per_step) {
+    if (++time_in_step >= time_per_step) {
       time_in_step = 0;
       place_in_list++;
     }
