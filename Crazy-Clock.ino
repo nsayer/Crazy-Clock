@@ -36,6 +36,9 @@
 #include <avr/sleep.h>
 #include <avr/power.h>
 
+// Turn this on to use the unused output as a debug output
+// #define DEBUG
+
 // Update the PRNG seed daily
 #define SEED_UPDATE_INTERVAL (86400)
 
@@ -111,7 +114,12 @@ void setup() {
   
   set_sleep_mode(SLEEP_MODE_IDLE);
 
+#ifdef DEBUG
+  pinMode(P_UNUSED, OUTPUT);
+  digitalWrite(P_UNUSED, LOW);
+#else
   pinMode(P_UNUSED, INPUT_PULLUP);
+#endif
   pinMode(P0, OUTPUT);
   pinMode(P1, OUTPUT);
   digitalWrite(P0, LOW);
@@ -144,22 +152,24 @@ void loop() {
     }
     if (place_in_list >= LIST_LENGTH) {
       // We're out of instructions. Time to make some.
-      for(int i = 0; i < LIST_LENGTH / 2; i++) {
+      for(int i = 0; i < LIST_LENGTH; i += 2) {
         // We're going to add instructions in pairs - either a double-and-half time pair or a pair of normals.
         // Adding the half and double speed in pairs - even if they're not done adjacently (as long as they *do* get done)
         // will insure the clock will keep long-term time accurately.
         switch(random(2)) {
-          case 0: instruction_list[2 * i] = HALF_SPEED;
-                  instruction_list[2 * i + 1] = DOUBLE_SPEED;
-                  break;
-          case 1: instruction_list[2 * i] = NORMAL_SPEED;
-                  instruction_list[2 * i + 1] = NORMAL_SPEED;
-                  break;
+          case 0:
+            instruction_list[i] = HALF_SPEED;
+            instruction_list[i + 1] = DOUBLE_SPEED;
+            break;
+          case 1:
+            instruction_list[i] = NORMAL_SPEED;
+            instruction_list[i + 1] = NORMAL_SPEED;
+            break;
         }
       }
       // Now shuffle the array
-      for(int i = 0; i < LIST_LENGTH; i++) {
-        unsigned char swapspot = random(LIST_LENGTH - i);
+      for(int i = 0; i < LIST_LENGTH - 1; i++) {
+        unsigned char swapspot = random(i, LIST_LENGTH);
         unsigned char temp = instruction_list[i];
         instruction_list[i] = instruction_list[swapspot];
         instruction_list[swapspot] = temp;
@@ -201,6 +211,12 @@ void loop() {
         break;
     }
     if (++time_in_step >= time_per_step) {
+#ifdef DEBUG
+      // signal the transition point. Should happen once every "time per step" seconds
+      digitalWrite(P_UNUSED, HIGH);
+      delay_ms(30);
+      digitalWrite(P_UNUSED, LOW);
+#endif
       time_in_step = 0;
       place_in_list++;
     }
