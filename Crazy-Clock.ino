@@ -43,10 +43,9 @@
 #define SEED_UPDATE_INTERVAL (86400)
 
 // These are the values for the randomly constructed instruction list
-#define HALF_SPEED 1
+#define SLOW_SPEED 1
 #define NORMAL_SPEED 2
-// Double-speed is a misnomer. It's actually 1.5x speed.
-#define DOUBLE_SPEED 3
+#define FAST_SPEED 3
 
 // This *must* be even! It's also a bit of a balancing act between allowing
 // for whackiness, but not allowing the clock to drift too far.
@@ -143,7 +142,7 @@ void loop() {
   unsigned char place_in_list = LIST_LENGTH; // force a reset.
   unsigned char time_per_step = 0; // This is moot - avoids an incorrect warning
   unsigned char time_in_step = 0; // This is also moot - avoids another incorrect warning
-  unsigned char half_tick_placeholder = 0;
+  unsigned char tick_step_placeholder = 0;
   
   while(1){
     // The intent is for the top of this loop to be hit once per second
@@ -159,8 +158,8 @@ void loop() {
         // will insure the clock will keep long-term time accurately.
         switch(random(2)) {
           case 0:
-            instruction_list[i] = HALF_SPEED;
-            instruction_list[i + 1] = DOUBLE_SPEED;
+            instruction_list[i] = SLOW_SPEED;
+            instruction_list[i + 1] = FAST_SPEED;
             break;
           case 1:
             instruction_list[i] = NORMAL_SPEED;
@@ -178,7 +177,7 @@ void loop() {
       // This must be even!
       // It also should be long enough to establish a pattern
       // before changing.
-      time_per_step = random(5) * 4 + 10;
+      time_per_step = random(5) * 6 + 10;
       place_in_list = 0;
       time_in_step = 0;
     }
@@ -187,40 +186,32 @@ void loop() {
     // Each case must consume 10 clock ticks - that is,
     // each must call either doTick() or sleep_mode() a total of 10 times.  
     switch(instruction_list[place_in_list]) {
-      case HALF_SPEED:
-        if (half_tick_placeholder) {
-          // do nothing, but take the time that a tick would take.
-          sleep_mode();
-        } else {
+      case SLOW_SPEED:
+        if (tick_step_placeholder == 1) { // Try and stick the lone tick in the middle, sort of
           doTick();
+        } else {
+          sleep_mode();
         }
         for(int i = 0; i < IRQS_PER_SECOND - 1; i++)
           sleep_mode();
-        half_tick_placeholder = !half_tick_placeholder;
         break;
       case NORMAL_SPEED:
         doTick();
         for(int i = 0; i < IRQS_PER_SECOND - 1; i++)
           sleep_mode();
         break;
-      case DOUBLE_SPEED:
-        if (half_tick_placeholder) {
-          // This is a very tricky approximation of "one-and-a-half" time.
-          // We need to tick 3 times in 2 seconds. But remember, the sum
-          // of each must be IRQS_PER_SECOND, which means revisiting
-          // this trickiness if it ever changes from being 10.
-          doTick();
-          for(int i = 0; i < 6; i++) sleep_mode();
-          doTick();
-          for(int i = 0; i < 2; i++) sleep_mode();
-        } else {
-          for(int i = 0; i < 3; i++) sleep_mode();
-          doTick();
-          for(int i = 0; i < 6; i++) sleep_mode();
+      case FAST_SPEED:
+        // Tick 5 times over 30 "systicks"
+        for(int i = 0; i < IRQS_PER_SECOND; i++) {
+          if ((IRQS_PER_SECOND * tick_step_placeholder + i) % 6 == 0) {
+            doTick();
+          } else {
+            sleep_mode();
+          }
         }
-        half_tick_placeholder = !half_tick_placeholder;
         break;
     }
+    ++tick_step_placeholder %= 3;
     if (++time_in_step >= time_per_step) {
 #ifdef DEBUG
       // signal the transition point. Should happen once every "time per step" seconds
