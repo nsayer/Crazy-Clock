@@ -100,7 +100,7 @@ void setup() {
   // xtal freq = 4.096 MHz.
   // CPU freq = 4.096 MHz / 8 = 512 kHz
   // count freq = 512 kHz / 1024 = 500 Hz
-  OCR0A = 50; // 10 Hz
+  OCR0A = 49; // 10 Hz - don't forget to subtract 1 - the counter is 0-49.
   TIMSK = _BV(OCIE0A); // OCR0A interrupt only.
   ACSR = _BV(ACD); // Turn off analog comparator - but was it ever on anyway?
   
