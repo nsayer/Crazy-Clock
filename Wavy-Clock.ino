@@ -115,7 +115,7 @@ void setup() {
   power_timer1_disable();
   TCCR0A = _BV(WGM01); // mode 2 - CTC
   TCCR0B = _BV(CS02) | _BV(CS00); // prescale = 1024
-#ifdef TEN_BASED_CLOCK
+#ifndef TEN_BASED_CLOCK
   // count freq = 512 kHz / 1024 = 500 Hz
   OCR0A = 49; // 10 Hz - don't forget to subtract 1 - the counter is 0-49.
 #endif
