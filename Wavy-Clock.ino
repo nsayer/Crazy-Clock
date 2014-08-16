@@ -44,6 +44,21 @@
 // interrupts, we're just waiting for each one in turn.
 #define IRQS_PER_SECOND (10)
 
+// Our design choices may wind up with a system clock of either 500 kHz
+// or 512 kHz. If it's 500 kHz, then we have to do some juggling to wind up
+// with the proper IRQS_PER_SECOND value of 10. To set that up, uncomment
+// this:
+// #define TEN_BASED_CLOCK
+
+#ifdef TEN_BASED_CLOCK
+// 50,000 divided by 1024 is 48 53/64, which is 49*53 + 48*(64-53)
+#define CLOCK_CYCLES (64)
+// Don't forget to decrement the OCR0A value - it's 0 based and inclusive
+#define CLOCK_BASIC_CYCLE (48 - 1)
+// a "long" cycle is CLOCK_BASIC_CYCLE + 1
+#define CLOCK_NUM_LONG_CYCLES (53)
+#endif
+
 // clock solenoid pins
 #define P0 0
 #define P1 1
@@ -55,7 +70,7 @@
 // This will alternate the ticks
 #define TICK_PIN (lastTick == P0?P1:P0)
 
-unsigned char lastTick;
+static unsigned char lastTick;
 
 // This delay loop is magical because we know the timer is ticking at 500 Hz.
 // So we just wait until it counts N/2 times and that will be an N msec delay.
@@ -64,13 +79,27 @@ static void delay_ms(unsigned char msec) {
    while(TCNT0 - start_time < msec / 2) ; // sit-n-spin
 }
 
+static void doSleep() {
+#ifdef TEN_BASED_CLOCK
+  static unsigned char cycle_pos = 0;
+
+  if (cycle_pos == CLOCK_NUM_LONG_CYCLES)
+    OCR0A = CLOCK_BASIC_CYCLE;
+  if (cycle_pos++ >= CLOCK_CYCLES) {
+    OCR0A = CLOCK_BASIC_CYCLE + 1;
+    cycle_pos = 0;
+  }
+#endif
+  sleep_mode();
+}
+
 // Each call to doTick() will "eat" a single one of our interrupt "ticks"
 static void doTick() {
   digitalWrite(TICK_PIN, HIGH);
   delay_ms(TICK_LENGTH);
   digitalWrite(TICK_PIN, LOW);
   lastTick = TICK_PIN;
-  sleep_mode(); // eat the rest of this tick
+  doSleep(); // eat the rest of this tick
 }
 
 ISR(TIMER0_COMPA_vect) {
@@ -78,16 +107,18 @@ ISR(TIMER0_COMPA_vect) {
 }
 
 void setup() {
+  // change this so that we wind up with a 512 kHz or a 500 kHz CPU clock.
+  // And if it's 500 kHz, be sure to uncomment TEN_BASED_CLOCK above.
   clock_prescale_set(clock_div_8);
   power_adc_disable();
   power_usi_disable();
   power_timer1_disable();
   TCCR0A = _BV(WGM01); // mode 2 - CTC
   TCCR0B = _BV(CS02) | _BV(CS00); // prescale = 1024
-  // xtal freq = 4.096 MHz.
-  // CPU freq = 4.096 MHz / 8 = 512 kHz
+#ifdef TEN_BASED_CLOCK
   // count freq = 512 kHz / 1024 = 500 Hz
   OCR0A = 49; // 10 Hz - don't forget to subtract 1 - the counter is 0-49.
+#endif
   TIMSK = _BV(OCIE0A); // OCR0A interrupt only.
   ACSR = _BV(ACD); // Turn off analog comparator - but was it ever on anyway?
   
@@ -113,6 +144,6 @@ void loop() {
   for(int i = 0; i < sizeof(sin_table); i++) {
     doTick();
     for(int j = 0; j < sin_table[i]; j++)
-      sleep_mode();
+      doSleep();
   }
 }
