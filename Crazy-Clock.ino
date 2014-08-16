@@ -177,7 +177,7 @@ void loop() {
       // This must be even!
       // It also should be long enough to establish a pattern
       // before changing.
-      time_per_step = random(5) * 6 + 10;
+      time_per_step = random(5) * 6 + 12;
       place_in_list = 0;
       time_in_step = 0;
     }
