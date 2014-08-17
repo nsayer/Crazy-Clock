@@ -90,10 +90,12 @@ static void delay_ms(unsigned char msec) {
    while(TCNT0 - start_time < msec / 2) ; // sit-n-spin
 }
 
-static void doSleep() {
 #ifdef TEN_BASED_CLOCK
   static unsigned char cycle_pos = 0;
+#endif
 
+static void doSleep() {
+#ifdef TEN_BASED_CLOCK
   if (cycle_pos == CLOCK_NUM_LONG_CYCLES)
     OCR0A = CLOCK_BASIC_CYCLE;
   if (cycle_pos++ >= CLOCK_CYCLES) {
