@@ -48,6 +48,21 @@
 // interrupts, we're just waiting for each one in turn.
 #define IRQS_PER_SECOND (10)
 
+// Our design choices may wind up with a system clock of either 500 kHz
+// or 512 kHz. If it's 500 kHz, then we have to do some juggling to wind up
+// with the proper IRQS_PER_SECOND value of 10. To set that up, uncomment
+// this:
+// #define TEN_BASED_CLOCK
+
+#ifdef TEN_BASED_CLOCK
+// 50,000 divided by 1024 is 48 53/64, which is 49*53 + 48*(64-53)
+#define CLOCK_CYCLES (64)
+// Don't forget to decrement the OCR0A value - it's 0 based and inclusive
+#define CLOCK_BASIC_CYCLE (48 - 1)
+// a "long" cycle is CLOCK_BASIC_CYCLE + 1
+#define CLOCK_NUM_LONG_CYCLES (53)
+#endif
+
 // clock solenoid pins
 #define P0 0
 #define P1 1
@@ -59,7 +74,7 @@
 // This will alternate the ticks
 #define TICK_PIN (lastTick == P0?P1:P0)
 
-unsigned char lastTick;
+static unsigned char lastTick;
 
 // This delay loop is magical because we know the timer is ticking at 500 Hz.
 // So we just wait until it counts N/2 times and that will be an N msec delay.
@@ -68,13 +83,29 @@ static void delay_ms(unsigned char msec) {
    while(TCNT0 - start_time < msec / 2) ; // sit-n-spin
 }
 
+#ifdef TEN_BASED_CLOCK
+  static unsigned char cycle_pos = 0xff; // force a reset
+#endif
+
+static void doSleep() {
+#ifdef TEN_BASED_CLOCK
+  if (cycle_pos == CLOCK_NUM_LONG_CYCLES)
+    OCR0A = CLOCK_BASIC_CYCLE;
+  if (cycle_pos++ >= CLOCK_CYCLES) {
+    OCR0A = CLOCK_BASIC_CYCLE + 1;
+    cycle_pos = 0;
+  }
+#endif
+  sleep_mode();
+}
+
 // Each call to doTick() will "eat" a single one of our interrupt "ticks"
 static void doTick() {
   digitalWrite(TICK_PIN, HIGH);
   delay_ms(TICK_LENGTH);
   digitalWrite(TICK_PIN, LOW);
   lastTick = TICK_PIN;
-  sleep_mode(); // eat the rest of this tick
+  doSleep(); // eat the rest of this tick
 }
 
 static void updateSeed() {
@@ -142,6 +173,6 @@ void loop() {
       if (i == tick_position)
         doTick();
       else
-        sleep_mode();
+        doSleep();
   }
 }
