@@ -93,7 +93,7 @@ static void delay_ms(unsigned char msec) {
 }
 
 #ifdef TEN_BASED_CLOCK
-  static unsigned char cycle_pos = 0;
+  static unsigned char cycle_pos = 0xff; // force a reset
 #endif
 
 static void doSleep() {
