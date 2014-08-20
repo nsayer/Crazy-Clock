@@ -19,8 +19,8 @@
  */
 
 /*
- * This is intended to run on an ATTiny85. Connect a 16.384 MHz crystal and fuse it
- * for divide-by-8 clocking, no watchdog or brown-out detector.
+ * This is intended to run on an ATTiny85. Connect a 4.000 or 4.096 MHz crystal and fuse it
+ * for external, no-divide clocking, no watchdog or brown-out detector.
  *
  * Connect PB0 and PB1 to the coil pins of a Lavet stepper coil of a clock movement
  * (with a series resistor and flyback diode to ground on each pin) and power it 
