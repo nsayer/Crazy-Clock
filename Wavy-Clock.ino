@@ -48,7 +48,7 @@
 // or 512 kHz. If it's 500 kHz, then we have to do some juggling to wind up
 // with the proper IRQS_PER_SECOND value of 10. To set that up, uncomment
 // this:
-// #define TEN_BASED_CLOCK
+#define TEN_BASED_CLOCK
 
 #ifdef TEN_BASED_CLOCK
 // 50,000 divided by 1024 is 48 53/64, which is 49*53 + 48*(64-53)
@@ -112,6 +112,7 @@ void setup() {
   // change this so that we wind up with a 512 kHz or a 500 kHz CPU clock.
   // And if it's 500 kHz, be sure to uncomment TEN_BASED_CLOCK above.
   clock_prescale_set(clock_div_8);
+  ADCSRA = 0; // DIE, ADC!!! DIE!!!
   power_adc_disable();
   power_usi_disable();
   power_timer1_disable();
