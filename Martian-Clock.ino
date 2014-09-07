@@ -19,8 +19,8 @@
  */
 
 /*
- * This is intended to run on an ATTiny85. Connect a 4.000 or 4.096 MHz crystal and fuse it
- * for external, no-divide clocking, no watchdog or brown-out detector.
+ * This is intended to run on an ATTiny85. Connect a 16.384 MHz crystal and fuse it
+ * for divide-by-8 clocking, no watchdog or brown-out detector.
  *
  * Connect PB0 and PB1 to the coil pins of a Lavet stepper coil of a clock movement
  * (with a series resistor and flyback diode to ground on each pin) and power it 
@@ -66,11 +66,6 @@
 // How long is each tick? In this case, we're going to busy-wait on the timer.
 #define TICK_LENGTH (35)
 
-// This will alternate the ticks
-#define TICK_PIN (lastTick == P0?P1:P0)
-
-static unsigned char lastTick;
-
 // We need to add 99 extra sleeps every 6 minutes (3600 systicks).
 // We do this evenly by doing 36 of them every 37 systicks, then
 // 63 of them every 36 systicks. 36+63 = 99 and 36*37+36*63 = 3600. QED.
@@ -85,12 +80,10 @@ static void delay_ms(unsigned char msec) {
    while(TCNT0 - start_time < msec / 2) ; // sit-n-spin
 }
 
-#ifdef TEN_BASED_CLOCK
-static unsigned char cycle_pos = 0xff; // force a reset
-#endif
-
 static void doSleep() {
 #ifdef TEN_BASED_CLOCK
+  static unsigned char cycle_pos = 0xff; // force a reset
+
   if (cycle_pos == CLOCK_NUM_LONG_CYCLES)
     OCR0A = CLOCK_BASIC_CYCLE;
   if (cycle_pos++ >= CLOCK_CYCLES) {
@@ -101,8 +94,13 @@ static void doSleep() {
   sleep_mode();
 }
 
+// This will alternate the ticks
+#define TICK_PIN (lastTick == P0?P1:P0)
+
 // Each call to doTick() will "eat" a single one of our interrupt "ticks"
 static void doTick() {
+  static unsigned char lastTick = P0;
+
   digitalWrite(TICK_PIN, HIGH);
   delay_ms(TICK_LENGTH);
   digitalWrite(TICK_PIN, LOW);
@@ -133,18 +131,13 @@ void setup() {
   
   set_sleep_mode(SLEEP_MODE_IDLE);
 
-#ifdef DEBUG
   pinMode(P_UNUSED, OUTPUT);
   digitalWrite(P_UNUSED, LOW);
-#else
-  pinMode(P_UNUSED, INPUT_PULLUP);
-#endif
   pinMode(P0, OUTPUT);
   pinMode(P1, OUTPUT);
   digitalWrite(P0, LOW);
   digitalWrite(P1, LOW);
   
-  lastTick = P0;
 }
 
 void loop() {
