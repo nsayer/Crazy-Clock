@@ -19,8 +19,8 @@
  */
 
 /*
- * This is intended to run on an ATTiny85. Connect a 4.000 or 4.096 MHz crystal and fuse it
- * for external, no-divide clocking, no watchdog or brown-out detector.
+ * This is intended to run on an ATTiny85. Connect a 16.384 MHz crystal and fuse it
+ * for divide-by-8 clocking, no watchdog or brown-out detector.
  *
  * Connect PB0 and PB1 to the coil pins of a Lavet stepper coil of a clock movement
  * (with a series resistor and flyback diode to ground on each pin) and power it 
@@ -71,11 +71,6 @@
 // How long is each tick? In this case, we're going to busy-wait on the timer.
 #define TICK_LENGTH (35)
 
-// This will alternate the ticks
-#define TICK_PIN (lastTick == P0?P1:P0)
-
-static unsigned char lastTick;
-
 // This delay loop is magical because we know the timer is ticking at 500 Hz.
 // So we just wait until it counts N/2 times and that will be an N msec delay.
 static void delay_ms(unsigned char msec) {
@@ -83,12 +78,10 @@ static void delay_ms(unsigned char msec) {
    while(TCNT0 - start_time < msec / 2) ; // sit-n-spin
 }
 
-#ifdef TEN_BASED_CLOCK
-  static unsigned char cycle_pos = 0xff; // force a reset
-#endif
-
 static void doSleep() {
 #ifdef TEN_BASED_CLOCK
+  static unsigned char cycle_pos = 0xff; // force a reset
+
   if (cycle_pos == CLOCK_NUM_LONG_CYCLES)
     OCR0A = CLOCK_BASIC_CYCLE;
   if (cycle_pos++ >= CLOCK_CYCLES) {
@@ -99,8 +92,13 @@ static void doSleep() {
   sleep_mode();
 }
 
+// This will alternate the ticks
+#define TICK_PIN (lastTick == P0?P1:P0)
+
 // Each call to doTick() will "eat" a single one of our interrupt "ticks"
 static void doTick() {
+  static unsigned char lastTick = P0;
+
   digitalWrite(TICK_PIN, HIGH);
   delay_ms(TICK_LENGTH);
   digitalWrite(TICK_PIN, LOW);
@@ -123,33 +121,27 @@ ISR(TIMER0_COMPA_vect) {
 void setup() {
   clock_prescale_set(clock_div_8);
   ADCSRA = 0; // DIE, ADC!!! DIE!!!
+  ACSR = _BV(ACD); // Turn off analog comparator - but was it ever on anyway?
   power_adc_disable();
   power_usi_disable();
   power_timer1_disable();
   TCCR0A = _BV(WGM01); // mode 2 - CTC
   TCCR0B = _BV(CS02) | _BV(CS00); // prescale = 1024
-  // xtal freq = 4.096 MHz.
-  // CPU freq = 4.096 MHz / 8 = 512 kHz
+#ifndef TEN_BASED_CLOCK
   // count freq = 512 kHz / 1024 = 500 Hz
   OCR0A = 49; // 10 Hz - don't forget to subtract 1 - the counter is 0-49.
+#endif
   TIMSK = _BV(OCIE0A); // OCR0A interrupt only.
-  ACSR = _BV(ACD); // Turn off analog comparator - but was it ever on anyway?
   
   set_sleep_mode(SLEEP_MODE_IDLE);
 
-#ifdef DEBUG
   pinMode(P_UNUSED, OUTPUT);
   digitalWrite(P_UNUSED, LOW);
-#else
-  pinMode(P_UNUSED, INPUT_PULLUP);
-#endif
   pinMode(P0, OUTPUT);
   pinMode(P1, OUTPUT);
   digitalWrite(P0, LOW);
   digitalWrite(P1, LOW);
-  
-  lastTick = P0;
-    
+      
   // Try and perturb the PRNG as best as we can
   unsigned long seed = EEPROM.read(0);
   seed |= ((unsigned long)EEPROM.read(1))<<8;
