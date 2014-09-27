@@ -28,7 +28,7 @@
  *
  * This clock keeps Sidereal time. That is, each day is 3:56 shorter.
  * We achieve this by removing 59 seconds every 6 hours (actually 59 tenths every
- * 36 minutes). 
+ * 2160 seconds). 
  *
  */
  
@@ -68,10 +68,10 @@
 
 // We need to remove 59 extra sleeps every 36 minutes (21600 systicks).
 // We do this evenly by doing 6 of them every 366 systicks, then
-// 53 of them every 367 systicks. 6+53 = 59 and 366*6+53*365 = 21600-59. QED.
+// 53 of them every 367 systicks. 6+53 = 59 and 366*6+53*367 = 21600. QED.
 #define SIDEREAL_CYCLE_COUNT (59)
 #define SIDEREAL_CYCLE_LENGTH (366)
-#define NUM_LONG_SIDEREAL_CYCLES (6)
+#define NUM_LONG_SIDEREAL_CYCLES (53)
 
 // This delay loop is magical because we know the timer is ticking at 500 Hz.
 // So we just wait until it counts N/2 times and that will be an N msec delay.
