@@ -200,10 +200,10 @@ void loop() {
         instruction_list[i] = instruction_list[swapspot];
         instruction_list[swapspot] = temp;
       }
-      // This must be even!
+      // This must be a multiple of 3 AND be even!
       // It also should be long enough to establish a pattern
       // before changing.
-      time_per_step = random(5) * 6 + 10;
+      time_per_step = (random(5) + 2) * 6;
       place_in_list = 0;
       time_in_step = 0;
     }
