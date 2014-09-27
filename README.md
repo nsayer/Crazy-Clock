@@ -25,7 +25,7 @@ The warpy clock ticks 10% faster for 12 hours, and then 10% slower for 12 hours.
 
 The Martian clock ticks in Martian Sols. A day is 24 hours, 39 minutes, 36 seconds.
 
-The Sidereal clock keeps Sidereal (astronimical) time. A day is 23 hours, 56 minutes, 4 seconds.
+The Sidereal clock keeps Sidereal (astronomical) time. A day is 23 hours, 56 minutes, 4 seconds.
 
 
 There is a normal clock as well. It's useful if you modify a clock as a joke, but then want to put it back to normal. Since the installation procedure is generally destructive (it's a lot like a heart transplant: you generally can't make the old one work ever again when you're done), it's much easier to simply reprogram the new controller to be boring.
