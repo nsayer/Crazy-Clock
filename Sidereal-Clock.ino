@@ -43,7 +43,7 @@
 // or 512 kHz. If it's 500 kHz, then we have to do some juggling to wind up
 // with the proper IRQS_PER_SECOND value of 10. To set that up, uncomment
 // this:
-//#define TEN_BASED_CLOCK
+#define TEN_BASED_CLOCK
 
 #ifdef TEN_BASED_CLOCK
 #define CLOCK_CYCLES (64)
