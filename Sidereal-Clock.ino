@@ -43,7 +43,7 @@
 // or 512 kHz. If it's 500 kHz, then we have to do some juggling to wind up
 // with the proper IRQS_PER_SECOND value of 10. To set that up, uncomment
 // this:
-#define TEN_BASED_CLOCK
+//#define TEN_BASED_CLOCK
 
 #ifdef TEN_BASED_CLOCK
 #define CLOCK_CYCLES (64)
@@ -68,10 +68,10 @@
 
 // We need to remove 59 extra sleeps every 36 minutes (21600 systicks).
 // We do this evenly by doing 6 of them every 366 systicks, then
-// 53 of them every 367 systicks. 6+53 = 59 and 366*6+53*367 = 21600. QED.
+// 53 of them every 367 systicks. 6+53 = 59 and 366*53+367*6 = 21600. QED.
 #define SIDEREAL_CYCLE_COUNT (59)
 #define SIDEREAL_CYCLE_LENGTH (366)
-#define NUM_LONG_SIDEREAL_CYCLES (53)
+#define NUM_LONG_SIDEREAL_CYCLES (6)
 
 // This delay loop is magical because we know the timer is ticking at 500 Hz.
 // So we just wait until it counts N/2 times and that will be an N msec delay.
