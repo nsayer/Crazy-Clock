@@ -66,12 +66,21 @@
 // How long is each tick? In this case, we're going to busy-wait on the timer.
 #define TICK_LENGTH (35)
 
-// We need to remove 59 extra sleeps every 36 minutes (21600 systicks).
-// We do this evenly by doing 6 of them every 366 systicks, then
-// 53 of them every 367 systicks. 6+53 = 59 and 366*53+367*6 = 21600. QED.
-#define SIDEREAL_CYCLE_COUNT (59)
-#define SIDEREAL_CYCLE_LENGTH (366)
-#define NUM_LONG_SIDEREAL_CYCLES (6)
+// We need to remove 59 minutes every 8 hours. That's the same as saying
+// we need to remove 59 extra sleeps every 36 minutes (21600 systicks).
+// That means we need to skip a sleep every 21600/59 systicks. That
+// fraction is 366 + 6/59. So therefore we can do this evenly by 
+// doing 6 of them every 367 systicks, then 53 of them every 366 systicks.
+// 6+53 = 59 and 366*53+367*6 = 21600. QED.
+// This is the fractional denominator
+#define CYCLE_COUNT (59)
+// This is the whole number
+#define BASE_CYCLE_LENGTH (366)
+// This is the fractional numerator
+#define NUM_LONG_CYCLES (6)
+// To make the clock run a fraction slower rather than faster, uncomment this.
+// This is for the martian clock.
+//#define RUN_SLOW
 
 // This delay loop is magical because we know the timer is ticking at 500 Hz.
 // So we just wait until it counts N/2 times and that will be an N msec delay.
@@ -82,11 +91,11 @@ static void delay_ms(unsigned char msec) {
 
 static void doSleep() {
 #ifdef TEN_BASED_CLOCK
-  static unsigned char cycle_pos = 0xff; // force a reset
+  static unsigned char cycle_pos = 0xfe; // force a reset
 
-  if (cycle_pos == CLOCK_NUM_LONG_CYCLES)
+  if (++cycle_pos == CLOCK_NUM_LONG_CYCLES)
     OCR0A = CLOCK_BASIC_CYCLE;
-  if (cycle_pos++ >= CLOCK_CYCLES) {
+  if (cycle_pos >= CLOCK_CYCLES) {
     OCR0A = CLOCK_BASIC_CYCLE + 1;
     cycle_pos = 0;
   }
@@ -141,32 +150,41 @@ void setup() {
 }
 
 void loop() {
-  unsigned int sidereal_counter = 0; // this counts to either 366 or 365 before we add an extra sleep
-  unsigned int bump_counter = 0; // this counts bumps from 0 to CYCLE_LENGTH
+  unsigned int inner_counter = 0; // this counts to either BASE_CYCLE or BASE_CYCLE+1 before we adjust tick_counter.
+  unsigned int outer_counter = 0; // this counts inner cycles from 0 to CYCLE_LENGTH
+  unsigned int tick_counter = 0; // This counts SI tenths-of-a-second and we tick the clock when 0. This gets adjusted by the fraction cycles.
   while(1) {
-    for(int i = 0; i < IRQS_PER_SECOND; i++) {
-      unsigned char this_bump_length = SIDEREAL_CYCLE_LENGTH;
-      if (bump_counter < NUM_LONG_SIDEREAL_CYCLES) this_bump_length++;
-      if (sidereal_counter++ >= this_bump_length) {
-        sidereal_counter = 0;
-        if (bump_counter++ >= SIDEREAL_CYCLE_COUNT) {
-          bump_counter = 0;
+      if (++tick_counter >= IRQS_PER_SECOND) {
+        tick_counter = 0;
+      }
+      unsigned int this_cycle_length = BASE_CYCLE_LENGTH;
+      if (outer_counter < NUM_LONG_CYCLES) this_cycle_length++; // If this is a long cycle, increment
+      if (++inner_counter >= this_cycle_length) {
+        inner_counter = 0;
+        // It's time to skip (or add) a sleep.
+        if (++outer_counter >= CYCLE_COUNT) {
+          outer_counter = 0;
         }
-        // we're going to skip a sleep without sleeping. But we don't
+#ifdef RUN_SLOW
+        // We're inserting, rather than removing sleeps.
+        doSleep();
+#else
+        // we're going to skip a sleep. But we don't
         // want to skip an actual tick if it's time to do that.
         // So if it's time to tick then do it, but then skip the next one
         // by incrementing i an extra time. If not, then just continue the
         // for loop without the sleep that would follow.
-        if (i == 0) {
+        if (tick_counter == 0) {
           doTick();
-          i++;
+          tick_counter++;
         }
-        continue;
+        continue; // That is, skip the code below.
+#endif
       }
-      if (i == 0)
+      // the inner counter did not roll over. This is an ordinary systick.
+      if (tick_counter == 0)
         doTick();
       else
         doSleep();
-    }
   }
 }
