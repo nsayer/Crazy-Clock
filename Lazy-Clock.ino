@@ -80,11 +80,11 @@ static void delay_ms(unsigned char msec) {
 
 static void doSleep() {
 #ifdef TEN_BASED_CLOCK
-  static unsigned char cycle_pos = 0xff; // force a reset
+  static unsigned char cycle_pos = 0xfe; // force a reset
 
-  if (cycle_pos == CLOCK_NUM_LONG_CYCLES)
+  if (++cycle_pos == CLOCK_NUM_LONG_CYCLES)
     OCR0A = CLOCK_BASIC_CYCLE;
-  if (cycle_pos++ >= CLOCK_CYCLES) {
+  if (cycle_pos >= CLOCK_CYCLES) {
     OCR0A = CLOCK_BASIC_CYCLE + 1;
     cycle_pos = 0;
   }
