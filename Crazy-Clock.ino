@@ -61,15 +61,23 @@
 // or 512 kHz. If it's 500 kHz, then we have to do some juggling to wind up
 // with the proper IRQS_PER_SECOND value of 10. To set that up, uncomment
 // this:
-#define TEN_BASED_CLOCK
+//#define TEN_BASED_CLOCK
+#define THIRTYTWO_KHZ_CLOCK
 
-#ifdef TEN_BASED_CLOCK
-// 50,000 divided by 1024 is 48 53/64, which is 49*53 + 48*(64-53)
+#if defined(TEN_BASED_CLOCK)
+// 50,000 divided by 1024 is a divisor of 48 53/64, which is 49*53 + 48*(64-53)
 #define CLOCK_CYCLES (64)
 // Don't forget to decrement the OCR0A value - it's 0 based and inclusive
 #define CLOCK_BASIC_CYCLE (48 - 1)
 // a "long" cycle is CLOCK_BASIC_CYCLE + 1
 #define CLOCK_NUM_LONG_CYCLES (53)
+#elif defined(THIRTYTWO_KHZ_CLOCK)
+// 32768 divided by 256 yields a divisor of 12 4/5, which is 13*4 + 12
+#define CLOCK_CYCLES (5)
+// Don't forget to decrement the OCR0A value - it's 0 based and inclusive
+#define CLOCK_BASIC_CYCLE (12 - 1)
+// a "long" cycle is CLOCK_BASIC_CYCLE + 1
+#define CLOCK_NUM_LONG_CYCLES (4)
 #endif
 
 // clock solenoid pins
@@ -80,15 +88,24 @@
 // How long is each tick? In this case, we're going to busy-wait on the timer.
 #define TICK_LENGTH (35)
 
-// This delay loop is magical because we know the timer is ticking at 500 Hz.
-// So we just wait until it counts N/2 times and that will be an N msec delay.
 static void delay_ms(unsigned char msec) {
    unsigned char start_time = TCNT0;
+#ifdef THIRTYTWO_KHZ_CLOCK
+// For the 32 kHz clock, the counting rate is 128 Hz. This means that our
+// granularity is 7.8125 msec, but this is not really a critical timing
+// interval.
+   while(TCNT0 - start_time < (msec * 128L) / 1000) ; // sit-n-spin
+#else
+// This delay loop is magical because we know the timer is ticking at 500 Hz.
+// So we just wait until it counts N/2 times and that will be an N msec delay.
+// This will be a little off for TEN_BASED_CLOCK, but again, this is not a critical
+// timing interval.
    while(TCNT0 - start_time < msec / 2) ; // sit-n-spin
+#endif
 }
 
 static void doSleep() {
-#ifdef TEN_BASED_CLOCK
+#if defined(TEN_BASED_CLOCK) || defined(THIRTYTWO_KHZ_CLOCK)
   static unsigned char cycle_pos = 0xfe; // force a reset
 
   if (++cycle_pos == CLOCK_NUM_LONG_CYCLES)
@@ -130,15 +147,21 @@ ISR(TIMER0_COMPA_vect) {
 void setup() {
   // change this so that we wind up with a 512 kHz or a 500 kHz CPU clock.
   // And if it's 500 kHz, be sure to uncomment TEN_BASED_CLOCK above.
+#ifndef THIRTYTWO_KHZ_CLOCK
   clock_prescale_set(clock_div_8);
+#endif
   ADCSRA = 0; // DIE, ADC!!! DIE!!!
   ACSR = _BV(ACD); // Turn off analog comparator - but was it ever on anyway?
   power_adc_disable();
   power_usi_disable();
   power_timer1_disable();
   TCCR0A = _BV(WGM01); // mode 2 - CTC
+#ifdef THIRTYTWO_KHZ_CLOCK
+  TCCR0B = _BV(CS02); // prescale = 256
+#else
   TCCR0B = _BV(CS02) | _BV(CS00); // prescale = 1024
-#ifndef TEN_BASED_CLOCK
+#endif
+#if !defined(TEN_BASED_CLOCK) && !defined(THIRTYTWO_KHZ_CLOCK)
   // count freq = 512 kHz / 1024 = 500 Hz
   OCR0A = 49; // 10 Hz - don't forget to subtract 1 - the counter is 0-49.
 #endif
