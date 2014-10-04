@@ -47,9 +47,9 @@
 #define NORMAL_SPEED 2
 #define FAST_SPEED 3
 
-// This *must* be even! It's also a bit of a balancing act between allowing
+// This *must* be odd! It's also a bit of a balancing act between allowing
 // for whackiness, but not allowing the clock to drift too far.
-#define LIST_LENGTH 14
+#define LIST_LENGTH 15
 
 // We're going to set up a timer interrupt for every 100 msec, so what's 1/.1?
 // Note that while we're actually doing stuff, we *must* insure that we never
@@ -201,7 +201,11 @@ void loop() {
     }
     if (place_in_list >= LIST_LENGTH) {
       // We're out of instructions. Time to make some.
-      for(int i = 0; i < LIST_LENGTH; i += 2) {
+      // Now that our clock speed is so slow, this whole operation takes way too long.
+      // So we're going to actually do this over the course of a second. And to make it
+      // stand out less, we'll make sure that the first instruction is always "normal".
+      instruction_list[0] = NORMAL_SPEED;
+      for(int i = 1; i < LIST_LENGTH; i += 2) {
         // We're going to add instructions in pairs - either a double-and-half time pair or a pair of normals.
         // Adding the half and double speed in pairs - even if they're not done adjacently (as long as they *do* get done)
         // will insure the clock will keep long-term time accurately.
@@ -216,19 +220,23 @@ void loop() {
             break;
         }
       }
-      // Now shuffle the array
-      for(int i = 0; i < LIST_LENGTH - 1; i++) {
+      doTick(); // Ok, now tick and take a break;
+      // Now shuffle the array - but skip the first one.
+      for(int i = 1; i < LIST_LENGTH - 1; i++) {
         unsigned char swapspot = random(i, LIST_LENGTH);
         unsigned char temp = instruction_list[i];
         instruction_list[i] = instruction_list[swapspot];
         instruction_list[swapspot] = temp;
       }
+      doSleep(); // Time to take another break;
       // This must be a multiple of 3 AND be even!
       // It also should be long enough to establish a pattern
       // before changing.
       time_per_step = (random(5) + 2) * 6;
       place_in_list = 0;
       time_in_step = 0;
+      // Now eat the rest of this second and then proceed as ussual.
+      for(int i = 0; i < IRQS_PER_SECOND - 2; i++) doSleep();
     }
     
     // What are we doing right now?
