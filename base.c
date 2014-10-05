@@ -1,6 +1,6 @@
 /*
 
- Normal Clock for Arduino
+ Crazy Clock for Arduino
  Copyright 2014 Nicholas W. Sayer
  
  This program is free software; you can redistribute it and/or modify
@@ -26,43 +26,44 @@
  * (with a series resistor and flyback diode to ground on each pin) and power it 
  * from a 3.3 volt boost converter.
  *
- * This clock just keeps normal time by ticking once per second. No tricks.
+ * It will keep a long-term average pulse rate of 1 Hz (alternating coil pins), but
+ * will interleve periods of double-time and half-time ticking.
  *
  */
- 
-#include <Arduino.h>
-#include <EEPROM.h>
+
+#include <stdlib.h> 
 #include <avr/sleep.h>
 #include <avr/power.h>
+#include <avr/eeprom.h>
+#include <avr/interrupt.h>
+#include <avr/cpufunc.h>
 
-// Turn this on to use the unused output as a debug output
-// #define DEBUG
+#include "base.h"
 
-// Update the PRNG seed daily
-#define SEED_UPDATE_INTERVAL (86400)
-
-// We're going to set up a timer interrupt for every 100 msec, so what's 1/.1?
-// Note that while we're actually doing stuff, we *must* insure that we never
-// work through an interrupt. This is because we're not *counting* these
-// interrupts, we're just waiting for each one in turn.
-#define IRQS_PER_SECOND (10)
-
-// Our design choices may wind up with a system clock of either 500 kHz
-// or 512 kHz. If it's 500 kHz, then we have to do some juggling to wind up
+// Our design choices may wind up with a system clock of either 125 kHz
+// or 128 kHz. If it's 125 kHz, then we have to do some juggling to wind up
 // with the proper IRQS_PER_SECOND value of 10. To set that up, uncomment
 // this:
-//#define TEN_BASED_CLOCK
-#define THIRTYTWO_KHZ_CLOCK
+#define TEN_BASED_CLOCK
+
+// Another option is the 32 kHz clock crystal. For that one, we need to not
+// set up a sysclock prescaler, change the delay_ms() timing, use a smaller
+// timer prescaler, and use a different fraction for the interrupt cycle timing.
+//#define THIRTYTWO_KHZ_CLOCK
+
+#if defined(TEN_BASED_CLOCK) && defined(THIRTYTWO_KHZ_CLOCK)
+#error Must pick either 10 based, 32 kHz or neither.
+#endif
 
 #if defined(TEN_BASED_CLOCK)
-// 50,000 divided by 1024 is a divisor of 48 53/64, which is 49*53 + 48*(64-53)
+// 500,000 divided by (1024 * 10) is a divisor of 48 53/64, which is 49*53 + 48*11
 #define CLOCK_CYCLES (64)
 // Don't forget to decrement the OCR0A value - it's 0 based and inclusive
 #define CLOCK_BASIC_CYCLE (48 - 1)
 // a "long" cycle is CLOCK_BASIC_CYCLE + 1
 #define CLOCK_NUM_LONG_CYCLES (53)
 #elif defined(THIRTYTWO_KHZ_CLOCK)
-// 32768 divided by 256 yields a divisor of 12 4/5, which is 13*4 + 12
+// 32768 divided by (256 * 10) yields a divisor of 12 4/5, which is 13*4 + 12
 #define CLOCK_CYCLES (5)
 // Don't forget to decrement the OCR0A value - it's 0 based and inclusive
 #define CLOCK_BASIC_CYCLE (12 - 1)
@@ -78,8 +79,6 @@
 // How long is each tick? In this case, we're going to busy-wait on the timer.
 #define TICK_LENGTH (35)
 
-
-// For the 32 kHz clock, there are
 static void delay_ms(unsigned char msec) {
    unsigned char start_time = TCNT0;
 #ifdef THIRTYTWO_KHZ_CLOCK
@@ -96,7 +95,7 @@ static void delay_ms(unsigned char msec) {
 #endif
 }
 
-static void doSleep() {
+void doSleep() {
 #if defined(TEN_BASED_CLOCK) || defined(THIRTYTWO_KHZ_CLOCK)
   static unsigned char cycle_pos = 0xfe; // force a reset
 
@@ -114,23 +113,34 @@ static void doSleep() {
 #define TICK_PIN (lastTick == P0?P1:P0)
 
 // Each call to doTick() will "eat" a single one of our interrupt "ticks"
-static void doTick() {
+void doTick() {
   static unsigned char lastTick = P0;
 
-  digitalWrite(TICK_PIN, HIGH);
+  PORTB |= 1<<TICK_PIN;
   delay_ms(TICK_LENGTH);
-  digitalWrite(TICK_PIN, LOW);
+  PORTB &= ~(1<<TICK_PIN);
   lastTick = TICK_PIN;
   doSleep(); // eat the rest of this tick
 }
 
-ISR(TIMER0_COMPA_vect) {
-  // do nothing - just wake up
+void updateSeed() {
+  unsigned long seed = random();
+  eeprom_write_dword(0, seed);
 }
 
-void setup() {
+ISR(TIMER0_COMPA_vect) {
+  // do nothing - just wake up
+  _NOP();
+}
+
+extern void loop();
+
+void main() {
 #ifndef THIRTYTWO_KHZ_CLOCK
-  clock_prescale_set(clock_div_8);
+  // change this so that we wind up with a 512 kHz or a 500 kHz CPU clock.
+  // And if it's 500 kHz, be sure to uncomment TEN_BASED_CLOCK above.
+  //clock_prescale_set(clock_div_8);
+  clock_prescale_set(clock_div_32);
 #endif
   ADCSRA = 0; // DIE, ADC!!! DIE!!!
   ACSR = _BV(ACD); // Turn off analog comparator - but was it ever on anyway?
@@ -138,14 +148,12 @@ void setup() {
   power_usi_disable();
   power_timer1_disable();
   TCCR0A = _BV(WGM01); // mode 2 - CTC
-#ifdef THIRTYTWO_KHZ_CLOCK
+//#ifdef THIRTYTWO_KHZ_CLOCK
   TCCR0B = _BV(CS02); // prescale = 256
-#else
-  TCCR0B = _BV(CS02) | _BV(CS00); // prescale = 1024
-#endif
+//#else
+//  TCCR0B = _BV(CS02) | _BV(CS00); // prescale = 1024
+//#endif
 #if !defined(TEN_BASED_CLOCK) && !defined(THIRTYTWO_KHZ_CLOCK)
-  // xtal freq = 4.096 MHz.
-  // CPU freq = 4.096 MHz / 8 = 512 kHz
   // count freq = 512 kHz / 1024 = 500 Hz
   OCR0A = 49; // 10 Hz - don't forget to subtract 1 - the counter is 0-49.
 #endif
@@ -153,19 +161,18 @@ void setup() {
   
   set_sleep_mode(SLEEP_MODE_IDLE);
 
-  pinMode(P_UNUSED, OUTPUT);
-  digitalWrite(P_UNUSED, LOW);
-  pinMode(P0, OUTPUT);
-  pinMode(P1, OUTPUT);
-  digitalWrite(P0, LOW);
-  digitalWrite(P1, LOW);
+  DDRB = (1<<P0) | (1<<P1) | (1<<P_UNUSED); // all our pins are output.
+  PORTB = 0; // Initialize all pins low.
+      
+  // Try and perturb the PRNG as best as we can
+  unsigned long seed = eeprom_read_dword(0);
+  srandom(seed);
+  updateSeed();
+
+  sei();
+
+  // Now hand off to the specific clock code
+  while(1) loop();
 
 }
 
-void loop() {
-  while(1){
-    doTick();
-    for(int i = 0; i < IRQS_PER_SECOND - 1; i++)
-      doSleep();
-  }
-}
