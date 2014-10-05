@@ -137,9 +137,8 @@ extern void loop();
 
 void main() {
 #ifndef THIRTYTWO_KHZ_CLOCK
-  // change this so that we wind up with a 512 kHz or a 500 kHz CPU clock.
-  // And if it's 500 kHz, be sure to uncomment TEN_BASED_CLOCK above.
-  //clock_prescale_set(clock_div_8);
+  // change this so that we wind up with a 125 kHz or a 128 kHz CPU clock.
+  // And if it's 128 kHz, be sure to uncomment TEN_BASED_CLOCK above.
   clock_prescale_set(clock_div_32);
 #endif
   ADCSRA = 0; // DIE, ADC!!! DIE!!!
@@ -148,13 +147,9 @@ void main() {
   power_usi_disable();
   power_timer1_disable();
   TCCR0A = _BV(WGM01); // mode 2 - CTC
-//#ifdef THIRTYTWO_KHZ_CLOCK
   TCCR0B = _BV(CS02); // prescale = 256
-//#else
-//  TCCR0B = _BV(CS02) | _BV(CS00); // prescale = 1024
-//#endif
 #if !defined(TEN_BASED_CLOCK) && !defined(THIRTYTWO_KHZ_CLOCK)
-  // count freq = 512 kHz / 1024 = 500 Hz
+  // count freq = 128 kHz / 256 = 500 Hz
   OCR0A = 49; // 10 Hz - don't forget to subtract 1 - the counter is 0-49.
 #endif
   TIMSK = _BV(OCIE0A); // OCR0A interrupt only.
