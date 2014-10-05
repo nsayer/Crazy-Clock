@@ -56,7 +56,7 @@
 #endif
 
 #if defined(TEN_BASED_CLOCK)
-// 500,000 divided by (1024 * 10) is a divisor of 48 53/64, which is 49*53 + 48*11
+// 125,000 divided by (256 * 10) is a divisor of 48 53/64, which is 49*53 + 48*11
 #define CLOCK_CYCLES (64)
 // Don't forget to decrement the OCR0A value - it's 0 based and inclusive
 #define CLOCK_BASIC_CYCLE (48 - 1)
