@@ -1,4 +1,3 @@
-
 /*
 
  Crazy Clock for Arduino
@@ -28,7 +27,19 @@
 // interrupts, we're just waiting for each one in turn.
 #define IRQS_PER_SECOND (10)
 
+// You mark time by calling this method. It puts the CPU to sleep until
+// the next timer interrupt. It will also do the funky math to adjust
+// the interrupt counter to keep them happening at a nominal 10 Hz rate.
 void doSleep();
+
+// This method will tick the clock, and then call doSleep(). So in short,
+// for the clock to keep proper time, you must call doSleep() 9 times
+// for every call to doTick().
 void doTick();
+
+// If the clock uses random(), then every so often, it should call this
+// method. A random seed is kept in EEPROM. Calling this method perturbs
+// this seed so that every time you change the battery you don't see the
+// same patterns.
 void updateSeed();
 
