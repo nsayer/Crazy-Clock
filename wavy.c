@@ -30,9 +30,11 @@
 PROGMEM const unsigned char sin_table[] = {9, 12, 15, 17, 18, 18, 17, 16, 13, 10, 8, 5, 2, 1, 0, 0, 1, 3, 6};
 
 void loop() {
-  for(int i = 0; i < sizeof(sin_table) / sizeof(unsigned char); i++) {
-    doTick();
-    for(int j = 0; j < pgm_read_byte(sin_table + i); j++)
-      doSleep();
+  while(1) {
+    for(int i = 0; i < sizeof(sin_table) / sizeof(unsigned char); i++) {
+      doTick();
+      for(int j = 0; j < pgm_read_byte(sin_table + i); j++)
+        doSleep();
+    }
   }
 }
