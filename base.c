@@ -26,8 +26,18 @@
  * (with a series resistor and flyback diode to ground on each pin) and power it 
  * from a 3.3 volt boost converter.
  *
- * It will keep a long-term average pulse rate of 1 Hz (alternating coil pins), but
- * will interleve periods of double-time and half-time ticking.
+ * This file is the common infrastructure for all of the different clock types.
+ * It sets up a 10 Hz interrupt. The clock code(s) keep accurate time by calling
+ * either doTick() or doSleep() repeatedly. Each method will put the CPU to sleep
+ * until the next tenth-of-a-second interrupt (tick() will tick the clock once first).
+ * In addition to doTick() and doSleep(), any clock code that makes use of random()
+ * should occasionally (SEED_UPDATE_INTERVAL) make a call to updateSeed(). That will
+ * update the PRNG seed value stored in EEPROM, which insures that the clock doesn't
+ * repeat its previous behavior every time you change the battery.
+ *
+ * The clock code should insure that it doesn't do so much work that works through
+ * a 10 Hz interrupt interval. Every time that happens, the clock loses a tenth of
+ * a second. In particular, generating random numbers is a costly operation.
  *
  */
 
@@ -164,6 +174,7 @@ void main() {
   srandom(seed);
   updateSeed();
 
+  // Don't forget to turn the interrupts on.
   sei();
 
   // Now hand off to the specific clock code
