@@ -38,10 +38,12 @@ void loop() {
     }
     unsigned char tick_count = (random() % 30) + 1; //1-30, inclusive
     
-    for(int i = 0; i < tick_count; i++)
+    for(int i = 0; i < tick_count; i++) {
       doTick();
+      doSleep();
+    }
       
-    for(int i = 0; i < tick_count * 9; i++)
+    for(int i = 0; i < tick_count * 8; i++)
       doSleep();
   }
 }
