@@ -45,7 +45,7 @@ void loop() {
   unsigned char tick_step_placeholder = 0;
   
   while(1){
-    // The intent is for the top of this loop to be hit once per second
+    // The intent is for the top of this loop to be hit (about) once per second
     if (--seedUpdateAfter == 0) {
       updateSeed();
       seedUpdateAfter = SEED_UPDATE_INTERVAL;
@@ -54,7 +54,7 @@ void loop() {
       // We're out of instructions. Time to make some.
       // Now that our system clock speed is so slow, this whole operation takes way too long.
       // So we're going to actually do this over the course of a second. And to make it
-      // stand out less, we'll make sure that the first instruction is always "normal".
+      // stand out less, we'll make sure that the first instruction in the list is always "normal".
       // First, get the tick out of the way - it takes 1/3 of our "thinking" time away.
       doTick();
       instruction_list[0] = NORMAL_SPEED;
@@ -88,7 +88,8 @@ void loop() {
       time_per_step = ((random() % 5) + 2) * 6;
       place_in_list = 0;
       time_in_step = 0;
-      // Now eat the rest of this second and then proceed as ussual.
+      // Now eat the rest of this second and then proceed as usual.
+      // We ticked once and slept twice, so take 3 away from IRQS_PER_SECOND.
       for(int i = 0; i < IRQS_PER_SECOND - 3; i++) doSleep();
     }
     
