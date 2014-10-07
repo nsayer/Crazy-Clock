@@ -74,12 +74,12 @@
 // a "long" cycle is CLOCK_BASIC_CYCLE + 1
 #define CLOCK_NUM_LONG_CYCLES (53)
 #elif defined(THIRTYTWO_KHZ_CLOCK)
-// 32768 divided by (256 * 10) yields a divisor of 12 4/5, which is 13*4 + 12
+// 32768 divided by (64 * 10) yields a divisor of 51 1/5, which is 52 + 51*4
 #define CLOCK_CYCLES (5)
 // Don't forget to decrement the OCR0A value - it's 0 based and inclusive
-#define CLOCK_BASIC_CYCLE (12 - 1)
+#define CLOCK_BASIC_CYCLE (51 - 1)
 // a "long" cycle is CLOCK_BASIC_CYCLE + 1
-#define CLOCK_NUM_LONG_CYCLES (4)
+#define CLOCK_NUM_LONG_CYCLES (1)
 #endif
 
 // clock solenoid pins
@@ -90,20 +90,13 @@
 // How long is each tick? In this case, we're going to busy-wait on the timer.
 #define TICK_LENGTH (35)
 
-static void delay_ms(unsigned char msec) {
-   unsigned char start_time = TCNT0;
-#ifdef THIRTYTWO_KHZ_CLOCK
-// For the 32 kHz clock, the counting rate is 128 Hz. This means that our
-// granularity is 7.8125 msec, but this is not really a critical timing
-// interval.
-   while(TCNT0 - start_time < (msec * 128L) / 1000) ; // sit-n-spin
-#else
-// This delay loop is magical because we know the timer is ticking at 500 Hz.
+// This delay loop is magical because we know the timer is ticking at approximately 500 Hz.
 // So we just wait until it counts N/2 times and that will be an N msec delay.
 // This will be a little off for TEN_BASED_CLOCK, but again, this is not a critical
 // timing interval.
+static void delay_ms(unsigned char msec) {
+   unsigned char start_time = TCNT0;
    while(TCNT0 - start_time < msec / 2) ; // sit-n-spin
-#endif
 }
 
 void doSleep() {
@@ -127,9 +120,9 @@ void doSleep() {
 void doTick() {
   static unsigned char lastTick = P0;
 
-  PORTB |= 1<<TICK_PIN;
+  PORTB |= _BV(TICK_PIN);
   delay_ms(TICK_LENGTH);
-  PORTB &= ~(1<<TICK_PIN);
+  PORTB &= ~ _BV(TICK_PIN);
   lastTick = TICK_PIN;
   doSleep(); // eat the rest of this tick
 }
@@ -158,7 +151,11 @@ void main() {
   power_usi_disable();
   power_timer1_disable();
   TCCR0A = _BV(WGM01); // mode 2 - CTC
+#ifdef THIRTYTWO_KHZ_CLOCK
+  TCCR0B = _BV(CS01) | _BV(CS00); // prescale = 64
+#else
   TCCR0B = _BV(CS02); // prescale = 256
+#endif
 #if !defined(TEN_BASED_CLOCK) && !defined(THIRTYTWO_KHZ_CLOCK)
   // count freq = 128 kHz / 256 = 500 Hz
   OCR0A = 49; // 10 Hz - don't forget to subtract 1 - the counter is 0-49.
@@ -167,7 +164,7 @@ void main() {
   
   set_sleep_mode(SLEEP_MODE_IDLE);
 
-  DDRB = (1<<P0) | (1<<P1) | (1<<P_UNUSED); // all our pins are output.
+  DDRB = _BV(P0) | _BV(P1) | _BV(P_UNUSED); // all our pins are output.
   PORTB = 0; // Initialize all pins low.
       
   // Try and perturb the PRNG as best as we can
