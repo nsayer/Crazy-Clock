@@ -9,6 +9,8 @@
 # While you're at it, you should check the #defines in base.c. In particular,
 # TEN_BASED_CLOCK and THIRTYTWO_KHZ_CLOCK
 
+all: normal.hex crazy.hex lazy.hex martian.hex sidereal.hex vetinari.hex warpy.hex wavy.hex whacky.hex
+
 # Change this as appropriate! Don't screw it up!
 # fuse: fuse32k
 fuse: fuse4m
@@ -27,8 +29,6 @@ CC = avr-gcc
 OBJCPY = avr-objcopy
 AVRDUDE = avrdude
 CFLAGS = -Os -g -mmcu=$(CHIP) -std=c99
-
-all: normal.hex crazy.hex lazy.hex martian.hex sidereal.hex vetinari.hex warpy.hex wavy.hex whacky.hex
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
