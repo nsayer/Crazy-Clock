@@ -6,13 +6,13 @@
 # alternative for the crystal installed in your hardware. If you fuse
 # the chip wrong, you will BRICK it!
 
-all: normal.hex crazy.hex lazy.hex martian.hex sidereal.hex vetinari.hex warpy.hex wavy.hex whacky.hex
+all: normal.hex crazy.hex lazy.hex martian.hex sidereal.hex tidal.hex vetinari.hex warpy.hex wavy.hex whacky.hex
 
 # Change this as appropriate! Don't screw it up!
 
 # Pick these two for a 32.768 kHz crystal.
-# fuse: fuse32k
-# OPTS = -DTHIRTYTWO_KHZ_CLOCK
+#fuse: fuse32k
+#OPTS = -DTHIRTYTWO_KHZ_CLOCK
 
 # Pick these two for a 4.00 MHz crystal
 fuse: fuse4m
@@ -37,7 +37,7 @@ CFLAGS = -Os -g -mmcu=$(CHIP) -std=c99 $(OPTS)
 
 DUDE_OPTS = -c $(PROG) -p $(CHIP) -B $(SPICLOCK)
 
-%.o: %.c
+%.o: %.c Makefile
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 %.hex: %.elf
