@@ -37,6 +37,10 @@ void doSleep();
 // for every call to doTick().
 void doTick();
 
+// random(); is too slow for a 32 kHz system clock. This one uses no
+// higher math - just bit shifts.
+unsigned long q_random();
+
 // If the clock uses random(), then every so often, it should call this
 // method. A random seed is kept in EEPROM. Calling this method perturbs
 // this seed so that every time you change the battery you don't see the

@@ -24,7 +24,6 @@
  *
  */
 
-#include <stdlib.h>
 #include "base.h"
 
 void loop() {
@@ -36,7 +35,7 @@ void loop() {
       updateSeed();
       seedUpdateAfter = SEED_UPDATE_INTERVAL;
     }
-    unsigned char tick_count = (random() % 30) + 1; //1-30, inclusive
+    unsigned char tick_count = (q_random() % 30) + 1; //1-30, inclusive
     
     for(int i = 0; i < tick_count; i++) {
       doTick();

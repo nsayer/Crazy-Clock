@@ -24,7 +24,6 @@
  *
  */
 
-#include <stdlib.h>
 #include "base.h"
 
 // These are the values for the randomly constructed instruction list
@@ -62,7 +61,7 @@ void loop() {
         // We're going to add instructions in pairs - either a double-and-half time pair or a pair of normals.
         // Adding the half and double speed in pairs - even if they're not done adjacently (as long as they *do* get done)
         // will insure the clock will keep long-term time accurately.
-        switch(random() % 2) {
+        switch(q_random() % 2) {
           case 0:
             instruction_list[i] = SLOW_SPEED;
             instruction_list[i + 1] = FAST_SPEED;
@@ -76,7 +75,7 @@ void loop() {
       doSleep(); // Ok, now take a break;
       // Now shuffle the array - but skip the first one.
       for(int i = 1; i < LIST_LENGTH - 1; i++) {
-        unsigned char swapspot = i + (random() % (LIST_LENGTH - i));
+        unsigned char swapspot = i + (q_random() % (LIST_LENGTH - i));
         unsigned char temp = instruction_list[i];
         instruction_list[i] = instruction_list[swapspot];
         instruction_list[swapspot] = temp;
@@ -85,7 +84,7 @@ void loop() {
       // This must be a multiple of 3 AND be even!
       // It also should be long enough to establish a pattern
       // before changing.
-      time_per_step = ((random() % 5) + 2) * 6;
+      time_per_step = ((q_random() % 5) + 2) * 6;
       place_in_list = 0;
       time_in_step = 0;
       // Now eat the rest of this second and then proceed as usual.

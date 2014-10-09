@@ -42,7 +42,6 @@
  *
  */
 
-#include <stdlib.h> 
 #include <avr/io.h>
 #include <avr/sleep.h>
 #include <avr/power.h>
@@ -115,8 +114,19 @@ void doTick() {
   doSleep(); // eat the rest of this tick
 }
 
+// For a 32 kHz system clock speed, random() is too slow.
+// Found this at http://uzebox.org/forums/viewtopic.php?f=3&t=250
+long seed;
+#define M (0x7fffffffL)
+
+unsigned long q_random() {
+  seed = (seed >> 16) + ((seed << 15) & M) - (seed >> 21) - ((seed << 10) & M);
+  if (seed < 0) seed += M;
+  return (unsigned long) seed;
+}
+
 void updateSeed() {
-  unsigned long seed = random();
+  q_random();
   eeprom_write_dword(0, seed);
 }
 
@@ -130,7 +140,7 @@ extern void loop();
 void main() {
 #ifndef THIRTYTWO_KHZ_CLOCK
   // change this so that we wind up with as near a 32 kHz CPU clock as possible.
-  clock_prescale_set(clock_div_32);
+  clock_prescale_set(clock_div_128);
 #endif
   ADCSRA = 0; // DIE, ADC!!! DIE!!!
   ACSR = _BV(ACD); // Turn off analog comparator - but was it ever on anyway?
@@ -138,21 +148,18 @@ void main() {
   power_usi_disable();
   power_timer1_disable();
   TCCR0A = _BV(WGM01); // mode 2 - CTC
-#if defined(FOUR_MHZ_CLOCK)
-  TCCR0B = _BV(CS02); // prescale = 256
-#elif defined(THIRTYTWO_KHZ_CLOCK)
   TCCR0B = _BV(CS01) | _BV(CS00); // prescale = 64
-#endif
   TIMSK = _BV(OCIE0A); // OCR0A interrupt only.
   
   set_sleep_mode(SLEEP_MODE_IDLE);
 
   DDRB = _BV(P0) | _BV(P1) | _BV(P_UNUSED); // all our pins are output.
   PORTB = 0; // Initialize all pins low.
-      
+
   // Try and perturb the PRNG as best as we can
-  unsigned long seed = eeprom_read_dword(0);
-  srandom(seed);
+  seed = (long)eeprom_read_dword(0);
+  // it can't be all 0 or all 1
+  if (seed == 0 || ((seed & M) == M)) seed=0x12345678L;
   updateSeed();
 
   // Don't forget to turn the interrupts on.

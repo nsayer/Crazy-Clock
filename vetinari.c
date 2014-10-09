@@ -25,7 +25,6 @@
  *
  */
 
-#include <stdlib.h>
 #include "base.h"
 
 // To screw up the rhythm when we stutter, we'll pause a little
@@ -45,7 +44,7 @@ void loop() {
     }
     doTick(); // 1
     doSleep(); // 2
-    if (random() % 4) {
+    if (q_random() % 4) {
       // Be normal. A "second" is 10 ticks long.
       for(int i = 0; i < IRQS_PER_SECOND - 2; i++)
         doSleep();
