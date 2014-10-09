@@ -43,6 +43,7 @@
  */
 
 #include <stdlib.h> 
+#include <avr/io.h>
 #include <avr/sleep.h>
 #include <avr/power.h>
 #include <avr/eeprom.h>
@@ -129,7 +130,7 @@ extern void loop();
 void main() {
 #ifndef THIRTYTWO_KHZ_CLOCK
   // change this so that we wind up with as near a 32 kHz CPU clock as possible.
-  clock_prescale_set(clock_div_128);
+  clock_prescale_set(clock_div_32);
 #endif
   ADCSRA = 0; // DIE, ADC!!! DIE!!!
   ACSR = _BV(ACD); // Turn off analog comparator - but was it ever on anyway?
@@ -137,7 +138,11 @@ void main() {
   power_usi_disable();
   power_timer1_disable();
   TCCR0A = _BV(WGM01); // mode 2 - CTC
+#if defined(FOUR_MHZ_CLOCK)
+  TCCR0B = _BV(CS02); // prescale = 256
+#elif defined(THIRTYTWO_KHZ_CLOCK)
   TCCR0B = _BV(CS01) | _BV(CS00); // prescale = 64
+#endif
   TIMSK = _BV(OCIE0A); // OCR0A interrupt only.
   
   set_sleep_mode(SLEEP_MODE_IDLE);
