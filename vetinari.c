@@ -34,14 +34,8 @@
 #define TICKS_TO_GATHER (IRQS_PER_SECOND - PAUSE_TICKS)
 
 void loop() {
-  unsigned long seedUpdateAfter = SEED_UPDATE_INTERVAL;
   unsigned char ticks_needed = TICKS_TO_GATHER;
   while(1){
-    // The intent is for the top of this loop to be hit once per "second"
-    if (--seedUpdateAfter == 0) {
-      updateSeed();
-      seedUpdateAfter = SEED_UPDATE_INTERVAL;
-    }
     doTick(); // 1
     doSleep(); // 2
     if (q_random() % 4) {

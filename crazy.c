@@ -36,7 +36,6 @@
 #define LIST_LENGTH 15
 
 void loop() {
-  unsigned long seedUpdateAfter = SEED_UPDATE_INTERVAL;
   unsigned char instruction_list[LIST_LENGTH];
   unsigned char place_in_list = LIST_LENGTH; // force a reset.
   unsigned char time_per_step = 0; // This is moot - avoids an incorrect warning
@@ -44,11 +43,6 @@ void loop() {
   unsigned char tick_step_placeholder = 0;
   
   while(1){
-    // The intent is for the top of this loop to be hit (about) once per second
-    if (--seedUpdateAfter == 0) {
-      updateSeed();
-      seedUpdateAfter = SEED_UPDATE_INTERVAL;
-    }
     if (place_in_list >= LIST_LENGTH) {
       // We're out of instructions. Time to make some.
       // Now that our system clock speed is so slow, this whole operation takes way too long.

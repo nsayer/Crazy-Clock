@@ -27,14 +27,7 @@
 #include "base.h"
 
 void loop() {
-  unsigned long seedUpdateAfter = SEED_UPDATE_INTERVAL;
-  
   while(1){
-    // The intent is for the top of this loop to be hit once per second
-    if (--seedUpdateAfter == 0) {
-      updateSeed();
-      seedUpdateAfter = SEED_UPDATE_INTERVAL;
-    }
     unsigned char tick_count = (q_random() % 30) + 1; //1-30, inclusive
     
     for(int i = 0; i < tick_count; i++) {

@@ -18,9 +18,6 @@
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-// Update the PRNG seed daily
-#define SEED_UPDATE_INTERVAL (86400)
-
 // We're going to set up a timer interrupt for every 100 msec, so what's 1/.1?
 // Note that while we're actually doing stuff, we *must* insure that we never
 // work through an interrupt. This is because we're not *counting* these
@@ -40,10 +37,4 @@ void doTick();
 // random(); is too slow for a 32 kHz system clock. This one uses no
 // higher math - just bit shifts.
 unsigned long q_random();
-
-// If the clock uses random(), then every so often, it should call this
-// method. A random seed is kept in EEPROM. Calling this method perturbs
-// this seed so that every time you change the battery you don't see the
-// same patterns.
-void updateSeed();
 

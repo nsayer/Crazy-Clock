@@ -27,14 +27,7 @@
 #include "base.h"
 
 void loop() {
-  unsigned long seedUpdateAfter = SEED_UPDATE_INTERVAL;
-  
   while(1){
-    // The intent is for the top of this loop to be hit once per second
-    if (--seedUpdateAfter == 0) {
-      updateSeed();
-      seedUpdateAfter = SEED_UPDATE_INTERVAL;
-    }
     unsigned char tick_position = q_random() % IRQS_PER_SECOND; //0-9, inclusive
 
     for(int i = 0; i < IRQS_PER_SECOND; i++)

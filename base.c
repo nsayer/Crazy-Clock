@@ -72,24 +72,41 @@
 #define CLOCK_NUM_LONG_CYCLES (1)
 #endif
 
+// One day in tenths-of-a-second
+#define SEED_UPDATE_INTERVAL 864000L
+
 // clock solenoid pins
 #define P0 0
 #define P1 1
 #define P_UNUSED 2
 
 // How long is each tick? In this case, we're going to busy-wait on the timer.
-#define TICK_LENGTH (35)
+// For a 32 kHz system clock speed, random() is too slow.
+// Found this at http://uzebox.org/forums/viewtopic.php?f=3&t=250
+long seed;
+#define M (0x7fffffffL)
 
-// This delay loop is magical because we know the timer is ticking at approximately 500 Hz.
-// So we just wait until it counts N/2 times and that will be an N msec delay.
-// This will be a little off, but this is not a critical timing interval.
-static void delay_ms(unsigned char msec) {
-   unsigned char start_time = TCNT0;
-   while(TCNT0 - start_time < msec / 2) ; // sit-n-spin
+unsigned long q_random() {
+  seed = (seed >> 16) + ((seed << 15) & M) - (seed >> 21) - ((seed << 10) & M);
+  if (seed < 0) seed += M;
+  return (unsigned long) seed;
+}
+
+static void updateSeed() {
+  // Don't bother exercising the eeprom if the seed hasn't changed
+  // since last time.
+  if (((long)eeprom_read_dword(0)) == seed) return;
+  eeprom_write_dword(0, seed);
 }
 
 void doSleep() {
   static unsigned char cycle_pos = 0xfe; // force a reset
+  static unsigned long seed_update_timer = SEED_UPDATE_INTERVAL;
+
+  if (--seed_update_timer == 0) {
+    updateSeed();
+    seed_update_timer = SEED_UPDATE_INTERVAL;
+  }
 
   if (++cycle_pos == CLOCK_NUM_LONG_CYCLES)
     OCR0A = CLOCK_BASIC_CYCLE;
@@ -98,6 +115,16 @@ void doSleep() {
     cycle_pos = 0;
   }
   sleep_mode();
+}
+
+#define TICK_LENGTH (35)
+
+// This delay loop is magical because we know the timer is ticking at approximately 500 Hz.
+// So we just wait until it counts N/2 times and that will be an N msec delay.
+// This will be a little off, but this is not a critical timing interval.
+static void delay_ms(unsigned char msec) {
+   unsigned char start_time = TCNT0;
+   while(TCNT0 - start_time < msec / 2) ; // sit-n-spin
 }
 
 // This will alternate the ticks
@@ -112,22 +139,6 @@ void doTick() {
   PORTB &= ~ _BV(TICK_PIN);
   lastTick = TICK_PIN;
   doSleep(); // eat the rest of this tick
-}
-
-// For a 32 kHz system clock speed, random() is too slow.
-// Found this at http://uzebox.org/forums/viewtopic.php?f=3&t=250
-long seed;
-#define M (0x7fffffffL)
-
-unsigned long q_random() {
-  seed = (seed >> 16) + ((seed << 15) & M) - (seed >> 21) - ((seed << 10) & M);
-  if (seed < 0) seed += M;
-  return (unsigned long) seed;
-}
-
-void updateSeed() {
-  q_random();
-  eeprom_write_dword(0, seed);
 }
 
 ISR(TIMER0_COMPA_vect) {
@@ -160,7 +171,8 @@ void main() {
   seed = (long)eeprom_read_dword(0);
   // it can't be all 0 or all 1
   if (seed == 0 || ((seed & M) == M)) seed=0x12345678L;
-  updateSeed();
+  q_random(); // perturb it once...
+  updateSeed(); // and write it back out - a new seed every battery change.
 
   // Don't forget to turn the interrupts on.
   sei();
