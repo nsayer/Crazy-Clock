@@ -33,7 +33,7 @@
 
 // This *must* be odd! It's also a bit of a balancing act between allowing
 // for whackiness, but not allowing the clock to drift too far.
-#define LIST_LENGTH 15
+#define LIST_LENGTH 13
 
 void loop() {
   unsigned char instruction_list[LIST_LENGTH];
