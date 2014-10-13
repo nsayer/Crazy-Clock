@@ -65,6 +65,7 @@ void loop() {
             instruction_list[i + 1] = NORMAL_SPEED;
             break;
         }
+        if (i == 4 || i == 8) doSleep();
       }
       doSleep(); // Ok, now take a break;
       // Now shuffle the array - but skip the first one.
@@ -73,6 +74,7 @@ void loop() {
         unsigned char temp = instruction_list[i];
         instruction_list[i] = instruction_list[swapspot];
         instruction_list[swapspot] = temp;
+        if (i == 4 || i == 8) doSleep();
       }
       doSleep(); // Time to take another break;
       // This must be a multiple of 3 AND be even!
@@ -82,8 +84,8 @@ void loop() {
       place_in_list = 0;
       time_in_step = 0;
       // Now eat the rest of this second and then proceed as usual.
-      // We ticked once and slept twice, so take 3 away from IRQS_PER_SECOND.
-      for(int i = 0; i < IRQS_PER_SECOND - 3; i++) doSleep();
+      // We ticked once and slept six times, so take 7 away from IRQS_PER_SECOND.
+      for(int i = 0; i < IRQS_PER_SECOND - 7; i++) doSleep();
     }
     
     // What are we doing right now?
