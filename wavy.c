@@ -27,6 +27,7 @@
 #include <avr/pgmspace.h>
 #include "base.h"
 
+// The magic is that the sum of all of the elements of this table = 9 * the size of the table.
 PROGMEM const unsigned char sin_table[] = {9, 12, 15, 17, 18, 18, 17, 16, 13, 10, 8, 5, 2, 1, 0, 0, 1, 3, 6};
 
 void loop() {
