@@ -19,7 +19,7 @@
  */
 
 /*
- * This is intended to run on an ATTiny45. Connect a 4.00 MHz, 4.096 MHz or a 32.768 kHz
+ * This is intended to run on an ATTiny45. Connect a 4.00 MHz or a 32.768 kHz
  * crystal and fuse it for the appropriate oscillator (set the divide-by-8 fuse for 4.x MHz),
  * no watchdog or brown-out detector.
  *
@@ -30,11 +30,10 @@
  * This file is the common infrastructure for all of the different clock types.
  * It sets up a 10 Hz interrupt. The clock code(s) keep accurate time by calling
  * either doTick() or doSleep() repeatedly. Each method will put the CPU to sleep
- * until the next tenth-of-a-second interrupt (tick() will tick the clock once first).
- * In addition to doTick() and doSleep(), any clock code that makes use of random()
- * should occasionally (SEED_UPDATE_INTERVAL) make a call to updateSeed(). That will
- * update the PRNG seed value stored in EEPROM, which insures that the clock doesn't
- * repeat its previous behavior every time you change the battery.
+ * until the next tenth-of-a-second interrupt (doTick() will tick the clock once first).
+ * In addition, doTick() and doSleep(), will occasionally (SEED_UPDATE_INTERVAL)
+ * write out the PRNG seed (if it's changed) to EEPROM. This will insure that the clock
+ * doesn't repeat its previous behavior every time you change the battery.
  *
  * The clock code should insure that it doesn't do so much work that works through
  * a 10 Hz interrupt interval. Every time that happens, the clock loses a tenth of
