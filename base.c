@@ -80,7 +80,6 @@
 #define P1 1
 #define P_UNUSED 2
 
-// How long is each tick? In this case, we're going to busy-wait on the timer.
 // For a 32 kHz system clock speed, random() is too slow.
 // Found this at http://uzebox.org/forums/viewtopic.php?f=3&t=250
 long seed;
@@ -117,6 +116,7 @@ void doSleep() {
   sleep_mode();
 }
 
+// How long is each tick? In this case, we're going to busy-wait on the timer.
 #define TICK_LENGTH (35)
 
 // This delay loop is magical because we know the timer is ticking at approximately 500 Hz.
