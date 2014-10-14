@@ -31,9 +31,48 @@
 #define NORMAL_SPEED 2
 #define FAST_SPEED 3
 
-// This *must* be odd! It's also a bit of a balancing act between allowing
+// This *must* be even! It's also a bit of a balancing act between allowing
 // for whackiness, but not allowing the clock to drift too far.
-#define LIST_LENGTH 13
+#define LIST_LENGTH 14
+
+// Picking random numbers takes so long (at our slow clock speed) that
+// we can only afford to pick one every tenth of a second. So we're going
+// to keep a cache of them. For simplicity, it's a FIFO cache (they're
+// random numbers, after all). Make sure that the buffer is at least enough
+// to satisfy the need of the list regeneration code, which is to say
+// 1.5 * LIST_LENGTH + 1. However, we only need random chars, but
+// what we get from q_random() is random longs. So we only really need
+// a quarter that many.
+
+#define BUF_LEN (2 * LIST_LENGTH)
+
+unsigned char buf_ptr = 0;
+unsigned char random_buf[BUF_LEN];
+
+static unsigned char buf_random() {
+  if (buf_ptr > BUF_LEN - 4) return 1; // buffer is full
+  unsigned long val = q_random();
+  random_buf[buf_ptr++] = (unsigned char)(val >> 24);
+  random_buf[buf_ptr++] = (unsigned char)(val >> 16);
+  random_buf[buf_ptr++] = (unsigned char)(val >> 8);
+  random_buf[buf_ptr++] = (unsigned char)val;
+  return 0;
+}
+
+static unsigned char our_random() {
+  if (buf_ptr == 0) return 0; // what else can we do?
+  return random_buf[--buf_ptr];
+}
+
+static void our_sleep() {
+  buf_random();
+  doSleep();
+}
+
+static void our_tick() {
+  //buf_random(); // no - ticking already takes 35 ms.
+  doTick();
+}
 
 void loop() {
   unsigned char instruction_list[LIST_LENGTH];
@@ -41,21 +80,18 @@ void loop() {
   unsigned char time_per_step = 0; // This is moot - avoids an incorrect warning
   unsigned char time_in_step = 0; // This is also moot - avoids another incorrect warning
   unsigned char tick_step_placeholder = 0;
+
+  // Fill the random number cache
+  while (!buf_random()) ;
   
   while(1){
     if (place_in_list >= LIST_LENGTH) {
       // We're out of instructions. Time to make some.
-      // Now that our system clock speed is so slow, this whole operation takes way too long.
-      // So we're going to actually do this over the course of a second. And to make it
-      // stand out less, we'll make sure that the first instruction in the list is always "normal".
-      // First, get the tick out of the way - it takes 1/3 of our "thinking" time away.
-      doTick();
-      instruction_list[0] = NORMAL_SPEED;
-      for(int i = 1; i < LIST_LENGTH; i += 2) {
+      for(int i = 0; i < LIST_LENGTH; i += 2) {
         // We're going to add instructions in pairs - either a double-and-half time pair or a pair of normals.
         // Adding the half and double speed in pairs - even if they're not done adjacently (as long as they *do* get done)
         // will insure the clock will keep long-term time accurately.
-        switch(q_random() % 2) {
+        switch(our_random() % 2) {
           case 0:
             instruction_list[i] = SLOW_SPEED;
             instruction_list[i + 1] = FAST_SPEED;
@@ -65,54 +101,47 @@ void loop() {
             instruction_list[i + 1] = NORMAL_SPEED;
             break;
         }
-        if (i == 4 || i == 8) doSleep();
       }
-      doSleep(); // Ok, now take a break;
-      // Now shuffle the array - but skip the first one.
-      for(int i = 1; i < LIST_LENGTH - 1; i++) {
-        unsigned char swapspot = i + (q_random() % (LIST_LENGTH - i));
+      // Now shuffle the array - classic Knuth shuffle
+      for(int i = LIST_LENGTH - 1; i != 0; i--) {
+        unsigned char swapspot = our_random() % (i + 1);
         unsigned char temp = instruction_list[i];
         instruction_list[i] = instruction_list[swapspot];
         instruction_list[swapspot] = temp;
-        if (i == 4 || i == 8) doSleep();
       }
-      doSleep(); // Time to take another break;
       // This must be a multiple of 3 AND be even!
       // It also should be long enough to establish a pattern
       // before changing.
-      time_per_step = ((q_random() % 5) + 2) * 6;
+      time_per_step = ((our_random() % 5) + 2) * 6;
       place_in_list = 0;
       time_in_step = 0;
-      // Now eat the rest of this second and then proceed as usual.
-      // We ticked once and slept six times, so take 7 away from IRQS_PER_SECOND.
-      for(int i = 0; i < IRQS_PER_SECOND - 7; i++) doSleep();
     }
     
     // What are we doing right now?
     // Each case must consume 10 clock ticks - that is,
-    // each must call either doTick() or doSleep() a total of 10 times.  
+    // each must call either our_tick() or our_sleep() a total of 10 times.  
     switch(instruction_list[place_in_list]) {
       case SLOW_SPEED:
         if (tick_step_placeholder == 1) { // Try and stick the lone tick in the middle, sort of
-          doTick();
+          our_tick();
         } else {
-          doSleep();
+          our_sleep();
         }
         for(int i = 0; i < IRQS_PER_SECOND - 1; i++)
-          doSleep();
+          our_sleep();
         break;
       case NORMAL_SPEED:
-        doTick();
+        our_tick();
         for(int i = 0; i < IRQS_PER_SECOND - 1; i++)
-          doSleep();
+          our_sleep();
         break;
       case FAST_SPEED:
         // Tick 5 times over 30 "systicks"
         for(int i = 0; i < IRQS_PER_SECOND; i++) {
           if ((IRQS_PER_SECOND * tick_step_placeholder + i) % 6 == 0) {
-            doTick();
+            our_tick();
           } else {
-            doSleep();
+            our_sleep();
           }
         }
         break;
