@@ -46,8 +46,8 @@
 
 #define BUF_LEN (2 * LIST_LENGTH)
 
-unsigned char buf_ptr = 0;
-unsigned char random_buf[BUF_LEN];
+static unsigned char buf_ptr = 0;
+static unsigned char random_buf[BUF_LEN];
 
 static unsigned char buf_random() {
   if (buf_ptr > BUF_LEN - 4) return 1; // buffer is full

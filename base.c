@@ -82,7 +82,7 @@
 
 // For a 32 kHz system clock speed, random() is too slow.
 // Found this at http://uzebox.org/forums/viewtopic.php?f=3&t=250
-long seed;
+static long seed;
 #define M (0x7fffffffL)
 
 unsigned long q_random() {
@@ -98,7 +98,7 @@ static void updateSeed() {
   eeprom_write_dword(0, seed);
 }
 
-volatile unsigned int sleep_miss_counter = 0;
+volatile static unsigned char sleep_miss_counter = 0;
 
 void doSleep() {
   static unsigned char cycle_pos = 0xfe; // force a reset
