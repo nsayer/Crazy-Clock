@@ -12,11 +12,11 @@ all: normal.hex crazy.hex lazy.hex martian.hex sidereal.hex tidal.hex vetinari.h
 
 # Pick these two for a 32.768 kHz crystal.
 #fuse: fuse32k
-#OPTS = -DTHIRTYTWO_KHZ_CLOCK
+#OPTS = -DTHIRTYTWO_KHZ_CLOCK -DF_CPU=32768L
 
-# Pick these two for a 4.00 MHz crystal
+# Pick these two for a 4.00 MHz crystal. Note F_CPU is after pre-scale.
 fuse: fuse4m
-OPTS = -DFOUR_MHZ_CLOCK
+OPTS = -DFOUR_MHZ_CLOCK -DF_CPU=31250L
 
 # Change this to pick the correct programmer you're using
 PROG = usbtiny
@@ -53,11 +53,11 @@ clean:
 # The actual code will set that to divide-by-32, though, and that value
 # is not cleared by a RESET, so the system clock will be 125 kHz.
 fuse4m:
-	$(AVRDUDE) $(DUDE_OPTS) -U lfuse:w:0x7d:m -U hfuse:w:0xdf:m -U efuse:w:0xff:m
+	$(AVRDUDE) $(DUDE_OPTS) -U lfuse:w:0x7d:m -U hfuse:w:0xd7:m -U efuse:w:0xff:m
 
 # The 32 kHz variant is fused for the extra-low frequency oscillator and no prescaling.
 fuse32k:
-	$(AVRDUDE) $(DUDE_OPTS) -U lfuse:w:0xe6:m -U hfuse:w:0xdf:m -U efuse:w:0xff:m
+	$(AVRDUDE) $(DUDE_OPTS) -U lfuse:w:0xe6:m -U hfuse:w:0xd7:m -U efuse:w:0xff:m
 
 flash: $(TYPE).hex
 	$(AVRDUDE) $(DUDE_OPTS) -U flash:w:$(TYPE).hex

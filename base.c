@@ -47,6 +47,7 @@
 #include <avr/eeprom.h>
 #include <avr/interrupt.h>
 #include <avr/cpufunc.h>
+#include <util/delay.h>
 
 #include "base.h"
 
@@ -97,6 +98,8 @@ static void updateSeed() {
   eeprom_write_dword(0, seed);
 }
 
+volatile unsigned int sleep_miss_counter = 0;
+
 void doSleep() {
   static unsigned char cycle_pos = 0xfe; // force a reset
   static unsigned long seed_update_timer = SEED_UPDATE_INTERVAL;
@@ -112,19 +115,16 @@ void doSleep() {
     OCR0A = CLOCK_BASIC_CYCLE + 1;
     cycle_pos = 0;
   }
-  sleep_mode();
+  // If we missed a sleep, then try and catch up by *not* sleeping.
+  // Note that some inaccuracy will still result because the fractional
+  // cycle code above needs to track each sleep cycle in turn. So blowing
+  // through interrupts is still bad, just not as much.
+  if (sleep_miss_counter-- == 0)
+    sleep_mode(); // this results in sleep_miss_counter being incremented.
 }
 
-// How long is each tick? In this case, we're going to busy-wait on the timer.
+// How long is each tick pulse?
 #define TICK_LENGTH (35)
-
-// This delay loop is magical because we know the timer is ticking at approximately 500 Hz.
-// So we just wait until it counts N/2 times and that will be an N msec delay.
-// This will be a little off, but this is not a critical timing interval.
-static void delay_ms(unsigned char msec) {
-   unsigned char start_time = TCNT0;
-   while(TCNT0 - start_time < msec / 2) ; // sit-n-spin
-}
 
 // This will alternate the ticks
 #define TICK_PIN (lastTick == P0?P1:P0)
@@ -134,15 +134,15 @@ void doTick() {
   static unsigned char lastTick = P0;
 
   PORTB |= _BV(TICK_PIN);
-  delay_ms(TICK_LENGTH);
+  _delay_ms(TICK_LENGTH);
   PORTB &= ~ _BV(TICK_PIN);
   lastTick = TICK_PIN;
   doSleep(); // eat the rest of this tick
 }
 
 ISR(TIMER0_COMPA_vect) {
-  // do nothing - just wake up
-  _NOP();
+  // Keep track of any interrupts we blew through.
+  sleep_miss_counter++;
 }
 
 extern void loop();
