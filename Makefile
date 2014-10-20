@@ -50,8 +50,8 @@ clean:
 	rm -f *.o *.elf *.hex
 
 # The 4 MHz variant is fused for the 1-8 MHz oscillator and divide-by-8.
-# The actual code will set that to divide-by-32, though, and that value
-# is not cleared by a RESET, so the system clock will be 125 kHz.
+# The actual code will set that to divide-by-128, though, and that value
+# is not cleared by a RESET, so the system clock will be ~32 kHz.
 fuse4m:
 	$(AVRDUDE) $(DUDE_OPTS) -U lfuse:w:0x7d:m -U hfuse:w:0xd7:m -U efuse:w:0xff:m
 
