@@ -24,6 +24,7 @@
  *
  */
 
+#include <string.h>
 #include "base.h"
 
 // These are the values for the randomly constructed instruction list
@@ -48,6 +49,7 @@
 
 static unsigned char buf_ptr = 0;
 static unsigned char random_buf[BUF_LEN];
+static unsigned char instruction_list_stage[LIST_LENGTH];
 
 static unsigned char buf_random() {
   if (buf_ptr > BUF_LEN - 4) return 1; // buffer is full
@@ -74,48 +76,98 @@ static void our_tick() {
   doTick();
 }
 
+static void build_list() {
+  for(int i = 0; i < LIST_LENGTH; i += 2) {
+    // We're going to add instructions in pairs - either a double-and-half time pair or a pair of normals.
+    // Adding the half and double speed in pairs - even if they're not done adjacently (as long as they *do* get done)
+    // will insure the clock will keep long-term time accurately.
+    switch(our_random() % 2) {
+      case 0:
+        instruction_list_stage[i] = SLOW_SPEED;
+        instruction_list_stage[i + 1] = FAST_SPEED;
+        break;
+      case 1:
+        instruction_list_stage[i] = NORMAL_SPEED;
+        instruction_list_stage[i + 1] = NORMAL_SPEED;
+        break;
+    }
+  }
+}
+
+static void shuffle_list(int which) {
+  int start, end;
+  switch(which) {
+    case 0:
+      start = LIST_LENGTH - 1;
+      end = LIST_LENGTH / 2;
+      break;
+    case 1:
+      start = LIST_LENGTH / 2;
+      end = 0;
+      break;
+  }
+  // Now shuffle the array - classic Knuth shuffle
+  for(int i = start; i != end; i--) {
+    unsigned char swapspot = our_random() % (i + 1);
+    unsigned char temp = instruction_list_stage[i];
+    instruction_list_stage[i] = instruction_list_stage[swapspot];
+    instruction_list_stage[swapspot] = temp;
+  }
+}
+
 void loop() {
   unsigned char instruction_list[LIST_LENGTH];
   unsigned char place_in_list = LIST_LENGTH; // force a reset.
   unsigned char time_per_step = 0; // This is moot - avoids an incorrect warning
   unsigned char time_in_step = 0; // This is also moot - avoids another incorrect warning
   unsigned char tick_step_placeholder = 0;
+  unsigned char rebuilding_state = 0; // not rebuilding
 
   // Fill the random number cache
   while (!buf_random()) ;
-  
+ 
+  // build the initial list. The clock hasn't started yet, so it doesn't matter how long this takes. 
+  build_list();
+  shuffle_list(0);
+  shuffle_list(1);
+
+  // Now we start the clock for real.
   while(1){
     if (place_in_list >= LIST_LENGTH) {
-      // We're out of instructions. Time to make some.
-      for(int i = 0; i < LIST_LENGTH; i += 2) {
-        // We're going to add instructions in pairs - either a double-and-half time pair or a pair of normals.
-        // Adding the half and double speed in pairs - even if they're not done adjacently (as long as they *do* get done)
-        // will insure the clock will keep long-term time accurately.
-        switch(our_random() % 2) {
-          case 0:
-            instruction_list[i] = SLOW_SPEED;
-            instruction_list[i + 1] = FAST_SPEED;
-            break;
-          case 1:
-            instruction_list[i] = NORMAL_SPEED;
-            instruction_list[i + 1] = NORMAL_SPEED;
-            break;
-        }
-      }
-      // Now shuffle the array - classic Knuth shuffle
-      for(int i = LIST_LENGTH - 1; i != 0; i--) {
-        unsigned char swapspot = our_random() % (i + 1);
-        unsigned char temp = instruction_list[i];
-        instruction_list[i] = instruction_list[swapspot];
-        instruction_list[swapspot] = temp;
-      }
+      // We're out of instructions. Grab the staged list and set the rebuilding machine in motion.
+      memcpy(instruction_list, instruction_list_stage, sizeof(instruction_list));
       // This must be a multiple of 3 AND be even!
       // It also should be long enough to establish a pattern
       // before changing.
       time_per_step = ((our_random() % 5) + 2) * 6;
       place_in_list = 0;
       time_in_step = 0;
+      rebuilding_state = 1;
     }
+
+    // Rebuild the staged instruction list. Do this in phases across multiple seconds so that
+    // we don't blow past interrupts.
+    switch(rebuilding_state) {
+      case 0: // not rebuilding
+              break;
+      case 1: // Skip. We just copied the staging list. That alone took enough time.
+              // Also, if this is the very first second, then the random buffer is
+              // empty after the bootstrapping. 9 sleeps should be plenty to replenish
+              // it (since we gain 4 random numbers every time).
+              break;
+      case 2:
+          build_list();
+          break;
+      case 3:
+          shuffle_list(0);
+          break;
+      case 4:
+          shuffle_list(1);
+          // all done.
+          rebuilding_state = 0;
+          break;
+    }
+    if (rebuilding_state != 0) rebuilding_state++;
     
     // What are we doing right now?
     // Each case must consume 10 clock ticks - that is,
