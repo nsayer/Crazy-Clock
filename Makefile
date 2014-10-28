@@ -47,7 +47,7 @@ DUDE_OPTS = -c $(PROG) -p $(CHIP) -B $(SPICLOCK)
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:
-	rm -f *.o *.elf *.hex
+	rm -f *.o *.elf *.hex test-*
 
 # The 4 MHz variant is fused for the 1-8 MHz oscillator and divide-by-8.
 # The actual code will set that to divide-by-128, though, and that value
@@ -70,3 +70,7 @@ seed:
 
 init: fuse flash seed
 
+test:
+	gcc -c -DUNIT_TEST -O -o test-$(TYPE).o $(TYPE).c
+	gcc -c -O test.c
+	gcc -o test-$(TYPE) test.o test-$(TYPE).o
