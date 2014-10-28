@@ -24,7 +24,15 @@
  *
  */
 
+#if defined(UNIT_TEST)
+// On *nix, there is no PROGMEM. Just make it go away and turn the
+// pgm_read operations into just pointer derefs.
+#define PROGMEM
+#define pgm_read_byte(x) *(x)
+#else
 #include <avr/pgmspace.h>
+#endif
+
 #include "base.h"
 
 // The magic is that the sum of all of the elements of this table = 9 * the size of the table.
