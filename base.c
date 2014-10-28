@@ -100,9 +100,9 @@ static void updateSeed() {
 
 volatile static unsigned char sleep_miss_counter = 0;
 
+static unsigned char cycle_pos;
+static unsigned long seed_update_timer;
 void doSleep() {
-  static unsigned char cycle_pos = 0xfe; // force a reset
-  static unsigned long seed_update_timer = SEED_UPDATE_INTERVAL;
 
   if (--seed_update_timer == 0) {
     updateSeed();
@@ -121,6 +121,14 @@ void doSleep() {
   // through interrupts is still bad, just not as much.
   if (sleep_miss_counter-- == 0)
     sleep_mode(); // this results in sleep_miss_counter being incremented.
+#ifdef DEBUG
+  else {
+    // indicate an overflow
+    PORTB |= _BV(P_UNUSED);
+    _delay_ms(50); // really make it stand out. This will probably lead to a cascade.
+    PORTB &= ~ _BV(P_UNUSED);
+  }
+#endif
 }
 
 // How long is each tick pulse?
@@ -172,6 +180,10 @@ void main() {
   if (seed == 0 || ((seed & M) == M)) seed=0x12345678L;
   q_random(); // perturb it once...
   updateSeed(); // and write it back out - a new seed every battery change.
+
+  // initialize these so they don't have to be in the data segment.
+  cycle_pos = 0xfe; // force a reset
+  seed_update_timer = SEED_UPDATE_INTERVAL;
 
   // Don't forget to turn the interrupts on.
   sei();
