@@ -95,7 +95,7 @@ static void build_list() {
 }
 
 static void shuffle_list(int which) {
-  int start, end;
+  int start = 0, end = 0;
   switch(which) {
     case 0:
       start = LIST_LENGTH - 1;
