@@ -76,8 +76,19 @@ static void our_tick() {
   doTick();
 }
 
-static void build_list() {
-  for(int i = 0; i < LIST_LENGTH; i += 2) {
+static void build_list(int which) {
+  int start = 0, end = 0;
+  switch(which) {
+    case 0:
+      start = 0;
+      end = LIST_LENGTH / 2;
+      break;
+    case 1:
+      start = LIST_LENGTH / 2;
+      end = LIST_LENGTH;
+      break;
+  }
+  for(int i = start; i < end; i += 2) {
     // We're going to add instructions in pairs - either a double-and-half time pair or a pair of normals.
     // Adding the half and double speed in pairs - even if they're not done adjacently (as long as they *do* get done)
     // will insure the clock will keep long-term time accurately.
@@ -127,7 +138,8 @@ void loop() {
   while (!buf_random()) ;
  
   // build the initial list. The clock hasn't started yet, so it doesn't matter how long this takes. 
-  build_list();
+  build_list(0);
+  build_list(1);
   shuffle_list(0);
   shuffle_list(1);
 
@@ -139,7 +151,7 @@ void loop() {
       // This must be a multiple of 3 AND be even!
       // It also should be long enough to establish a pattern
       // before changing.
-      time_per_step = ((our_random() % 5) + 2) * 6;
+      time_per_step = ((our_random() % 5) + 2) * 6; // 12 - 36
       place_in_list = 0;
       time_in_step = 0;
       rebuilding_state = 1;
@@ -156,12 +168,15 @@ void loop() {
               // it (since we gain 4 random numbers every time).
               break;
       case 2:
-          build_list();
+          build_list(0);
           break;
       case 3:
-          shuffle_list(0);
+          build_list(1);
           break;
       case 4:
+          shuffle_list(0);
+          break;
+      case 5:
           shuffle_list(1);
           // all done.
           rebuilding_state = 0;
