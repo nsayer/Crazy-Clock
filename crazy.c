@@ -81,10 +81,10 @@ static void build_list(int which) {
   switch(which) {
     case 0:
       start = 0;
-      end = LIST_LENGTH / 2;
+      end = LIST_LENGTH / 2; end -= end % 2; // force it even
       break;
     case 1:
-      start = LIST_LENGTH / 2;
+      start = LIST_LENGTH / 2; start -= start % 2;
       end = LIST_LENGTH;
       break;
   }
@@ -136,7 +136,7 @@ void loop() {
 
   // Fill the random number cache
   while (!buf_random()) ;
- 
+
   // build the initial list. The clock hasn't started yet, so it doesn't matter how long this takes. 
   build_list(0);
   build_list(1);
