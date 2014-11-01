@@ -34,7 +34,7 @@
 
 // This *must* be even! It's also a bit of a balancing act between allowing
 // for whackiness, but not allowing the clock to drift too far.
-#define LIST_LENGTH 14
+#define LIST_LENGTH 12
 
 // Picking random numbers takes so long (at our slow clock speed) that
 // we can only afford to pick one every tenth of a second. So we're going
@@ -110,10 +110,10 @@ static void shuffle_list(int which) {
   switch(which) {
     case 0:
       start = LIST_LENGTH - 1;
-      end = LIST_LENGTH / 2;
+      end = LIST_LENGTH / 2 - 1;
       break;
     case 1:
-      start = LIST_LENGTH / 2;
+      start = LIST_LENGTH / 2 - 1;
       end = 0;
       break;
   }
