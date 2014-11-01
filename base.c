@@ -125,8 +125,7 @@ void doSleep() {
   else {
     // indicate an overflow
     PORTB |= _BV(P_UNUSED);
-    _delay_ms(50); // really make it stand out. This will probably lead to a cascade.
-    PORTB &= ~ _BV(P_UNUSED);
+    while(1); // lock up
   }
 #endif
 }
