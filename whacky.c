@@ -30,7 +30,7 @@ void loop() {
   while(1){
     unsigned char tick_position = q_random() % IRQS_PER_SECOND; //0-9, inclusive
 
-    for(int i = 0; i < IRQS_PER_SECOND; i++)
+    for(unsigned char i = 0; i < IRQS_PER_SECOND; i++)
       if (i == tick_position)
         doTick();
       else

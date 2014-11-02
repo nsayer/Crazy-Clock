@@ -27,7 +27,7 @@
 void loop() {
   while(1){
     doTick();
-    for(int i = 0; i < IRQS_PER_SECOND - 1; i++)
+    for(unsigned char i = 0; i < IRQS_PER_SECOND - 1; i++)
       doSleep();
   }
 }

@@ -35,7 +35,7 @@ void loop() {
   unsigned char cycle_direction = 0; // fast
   unsigned long cycle_position = 0;
   while(1) {
-    for(int i = 0; i < IRQS_PER_SECOND + (CYCLE_MAGNITUDE * (cycle_direction?-1:1)); i++) {
+    for(unsigned char i = 0; i < IRQS_PER_SECOND + (CYCLE_MAGNITUDE * (cycle_direction?-1:1)); i++) {
       if (i == 0)
         doTick();
       else

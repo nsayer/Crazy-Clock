@@ -40,20 +40,20 @@ void loop() {
     doSleep(); // 2
     if (q_random() % 4) {
       // Be normal. A "second" is 10 ticks long.
-      for(int i = 0; i < IRQS_PER_SECOND - 2; i++)
+      for(unsigned char i = 0; i < IRQS_PER_SECOND - 2; i++)
         doSleep();
     } else {
       // This is a special "second" - it's *11* ticks long.
       // Every tenth one, we're goging to insert a "stutter tick"
       if (--ticks_needed == 0) {
         doTick();
-        for(int i = 0; i < PAUSE_TICKS; i++)
+        for(unsigned char i = 0; i < PAUSE_TICKS; i++)
           doSleep();
         ticks_needed = TICKS_TO_GATHER;
       } else {
         doSleep();
       }
-      for (int i = 0; i < IRQS_PER_SECOND - 2; i++) // yes, -2, not -3.
+      for (unsigned char i = 0; i < IRQS_PER_SECOND - 2; i++) // yes, -2, not -3.
         doSleep();
     }
   }

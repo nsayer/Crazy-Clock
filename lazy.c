@@ -30,12 +30,12 @@ void loop() {
   while(1){
     unsigned char tick_count = (q_random() % 30) + 1; //1-30, inclusive
     
-    for(int i = 0; i < tick_count; i++) {
+    for(unsigned char i = 0; i < tick_count; i++) {
       doTick();
       doSleep();
     }
       
-    for(int i = 0; i < tick_count * 8; i++)
+    for(unsigned char i = 0; i < tick_count * 8; i++)
       doSleep();
   }
 }

@@ -95,7 +95,7 @@ static void build_list(int which) {
       end = LIST_LENGTH;
       break;
   }
-  for(int i = start; i < end; i += 2) {
+  for(unsigned char i = start; i < end; i += 2) {
     // We're going to add instructions in pairs - either a double-and-half time pair or a pair of normals.
     // Adding the half and double speed in pairs - even if they're not done adjacently (as long as they *do* get done)
     // will insure the clock will keep long-term time accurately.
@@ -125,7 +125,7 @@ static void shuffle_list(int which) {
       break;
   }
   // Now shuffle the array - classic Knuth shuffle
-  for(int i = start; i != end; i--) {
+  for(unsigned char i = start; i != end; i--) {
     unsigned char swapspot = our_random() % (i + 1);
     unsigned char temp = instruction_list_stage[i];
     instruction_list_stage[i] = instruction_list_stage[swapspot];
@@ -202,17 +202,17 @@ void loop() {
         } else {
           our_sleep();
         }
-        for(int i = 0; i < IRQS_PER_SECOND - 1; i++)
+        for(unsigned char i = 0; i < IRQS_PER_SECOND - 1; i++)
           our_sleep();
         break;
       case NORMAL_SPEED:
         our_tick();
-        for(int i = 0; i < IRQS_PER_SECOND - 1; i++)
+        for(unsigned char i = 0; i < IRQS_PER_SECOND - 1; i++)
           our_sleep();
         break;
       case FAST_SPEED:
         // Tick 5 times over 30 "systicks"
-        for(int i = 0; i < IRQS_PER_SECOND; i++) {
+        for(unsigned char i = 0; i < IRQS_PER_SECOND; i++) {
           if ((IRQS_PER_SECOND * tick_step_placeholder + i) % 6 == 0) {
             our_tick();
           } else {
