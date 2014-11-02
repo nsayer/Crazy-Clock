@@ -76,6 +76,13 @@ static void our_tick() {
   doTick();
 }
 
+// gcc -Os turns these switch statements into data table initialization.
+// That makes a data segment, because AVR-GCC is too stupid to put that
+// constant data into flash. So for these two methods, back down the
+// optimization to O1. Note that this gives an incorrect warning about
+// the GCC #pragma not being supported on AVR.
+#pragma GCC push_options
+#pragma GCC optimize ("O1")
 static void build_list(int which) {
   int start = 0, end = 0;
   switch(which) {
@@ -125,6 +132,7 @@ static void shuffle_list(int which) {
     instruction_list_stage[swapspot] = temp;
   }
 }
+#pragma GCC pop_options
 
 void loop() {
   unsigned char instruction_list[LIST_LENGTH];
