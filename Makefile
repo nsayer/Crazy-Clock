@@ -6,7 +6,7 @@
 # alternative for the crystal installed in your hardware. If you fuse
 # the chip wrong, you will BRICK it!
 
-all: normal.hex crazy.hex lazy.hex martian.hex sidereal.hex tidal.hex vetinari.hex warpy.hex wavy.hex whacky.hex
+all: early.hex normal.hex crazy.hex lazy.hex martian.hex sidereal.hex tidal.hex vetinari.hex warpy.hex wavy.hex whacky.hex
 
 # Change this as appropriate! Don't screw it up!
 
