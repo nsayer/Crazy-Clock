@@ -6,17 +6,17 @@
 # alternative for the crystal installed in your hardware. If you fuse
 # the chip wrong, you will BRICK it!
 
-all: early.hex normal.hex crazy.hex lazy.hex martian.hex sidereal.hex tidal.hex vetinari.hex warpy.hex wavy.hex whacky.hex
+all: normal.hex crazy.hex early.hex lazy.hex martian.hex sidereal.hex tidal.hex vetinari.hex warpy.hex wavy.hex whacky.hex tuney.hex
 
 # Change this as appropriate! Don't screw it up!
 
 # Pick these two for a 32.768 kHz crystal.
-#fuse: fuse32k
-#OPTS = -DTHIRTYTWO_KHZ_CLOCK -DF_CPU=32768L
+fuse: fuse32k
+OPTS = -DTHIRTYTWO_KHZ_CLOCK -DF_CPU=32768L
 
 # Pick these two for a 4.00 MHz crystal. Note F_CPU is after pre-scale.
-fuse: fuse4m
-OPTS = -DFOUR_MHZ_CLOCK -DF_CPU=31250L
+#fuse: fuse4m
+#OPTS = -DFOUR_MHZ_CLOCK -DF_CPU=31250L
 
 # Change this to pick the correct programmer you're using
 PROG = usbtiny
