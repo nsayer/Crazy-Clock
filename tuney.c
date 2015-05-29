@@ -53,7 +53,7 @@ PROGMEM const unsigned char backbeat_table[] = { 24, 6, 2, 12, 6, 2, 12, 6, 2, 1
 // SOS in morse
 PROGMEM const unsigned char sos_table[] = { 23, 2, 2, 4, 6, 6, 8, 2, 2, 35, 0};
 
-PROGMEM void* const song_table[] = { &shave_table, &backbeat_table, &sos_table };
+PROGMEM PGM_VOID_P const song_table[] = { (PGM_VOID_P)&shave_table, (PGM_VOID_P)&backbeat_table, (PGM_VOID_P)&sos_table };
 
 #define SONG_COUNT 3
 
