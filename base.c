@@ -48,6 +48,7 @@
 #include <avr/interrupt.h>
 #include <avr/cpufunc.h>
 #include <util/delay.h>
+#include <util/atomic.h>
 
 #include "base.h"
 
@@ -99,8 +100,8 @@ static void updateSeed() {
 }
 
 volatile static unsigned char sleep_miss_counter = 0;
+volatile static unsigned char cycle_pos;
 
-static unsigned char cycle_pos;
 static unsigned long seed_update_timer;
 void doSleep() {
 
@@ -109,17 +110,15 @@ void doSleep() {
     seed_update_timer = SEED_UPDATE_INTERVAL;
   }
 
-  if (++cycle_pos == CLOCK_NUM_LONG_CYCLES)
-    OCR0A = CLOCK_BASIC_CYCLE;
-  if (cycle_pos >= CLOCK_CYCLES) {
-    OCR0A = CLOCK_BASIC_CYCLE + 1;
-    cycle_pos = 0;
-  }
   // If we missed a sleep, then try and catch up by *not* sleeping.
-  // Note that some inaccuracy will still result because the fractional
-  // cycle code above needs to track each sleep cycle in turn. So blowing
-  // through interrupts is still bad, just not as much.
-  if (sleep_miss_counter-- == 0)
+  // Note that the test-and-decrememnt must be atomic, so save a
+  // copy of the present value before decrementing and use that
+  // copy for the decision.
+  unsigned char local_smc;
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+    local_smc = sleep_miss_counter--;
+  }
+  if (local_smc == 0)
     sleep_mode(); // this results in sleep_miss_counter being incremented.
 #ifdef DEBUG
   else {
@@ -148,7 +147,21 @@ void doTick() {
 }
 
 ISR(TIMER0_COMPA_vect) {
+  // This is the magic for fractional counting.
+  // Alternate between adding an extra count and
+  // not adding one. This means that the intervals
+  // are not uniform, but it's only by 2 ms or so,
+  // which won't be noticable for this application.
+  if (++cycle_pos == CLOCK_NUM_LONG_CYCLES)
+    OCR0A = CLOCK_BASIC_CYCLE;
+  if (cycle_pos >= CLOCK_CYCLES) {
+    OCR0A = CLOCK_BASIC_CYCLE + 1;
+    cycle_pos = 0;
+  }
+
   // Keep track of any interrupts we blew through.
+  // Every increment here *should* be matched by
+  // a decrement in doSleep();
   sleep_miss_counter++;
 }
 
@@ -180,9 +193,13 @@ void main() {
   q_random(); // perturb it once...
   updateSeed(); // and write it back out - a new seed every battery change.
 
-  // initialize these so they don't have to be in the data segment.
-  cycle_pos = 0xfe; // force a reset
+  // initialize this so it doesn't have to be in the data segment.
   seed_update_timer = SEED_UPDATE_INTERVAL;
+
+  // Set up the initial state of the timer.
+  OCR0A = CLOCK_BASIC_CYCLE + 1;
+  TCNT0 = 0;
+  cycle_pos = 0;
 
   // Don't forget to turn the interrupts on.
   sei();
