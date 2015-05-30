@@ -31,6 +31,7 @@
 #define PROGMEM
 #define pgm_read_byte(x) *(x)
 #define pgm_read_ptr(x) ((void*)(*(x)))
+#define PGM_VOID_P void*
 #else
 #include <avr/pgmspace.h>
 #ifndef pgm_read_ptr
