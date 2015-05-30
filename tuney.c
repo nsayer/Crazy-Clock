@@ -47,9 +47,9 @@
 // to mark the end.
 
 // "Shave-and-a-haircut... two bits!"
-PROGMEM const unsigned char shave_table[] = { 20, 4, 2, 2, 4, 8, 4, 28, 0 };
+PROGMEM const unsigned char shave_table[] = { 27, 3, 1, 1, 3, 7, 3, 27, 0 };
 // Backbeat from "Heart Of Rock-n-Roll"
-PROGMEM const unsigned char backbeat_table[] = { 24, 6, 2, 12, 6, 2, 12, 6, 2, 12, 6, 2, 25, 0 };
+PROGMEM const unsigned char backbeat_table[] = { 36, 5, 1, 7, 5, 1, 7, 5, 1, 7, 5, 1, 36, 0 };
 // SOS in morse
 PROGMEM const unsigned char sos_table[] = { 23, 2, 2, 4, 6, 6, 8, 2, 2, 35, 0};
 
