@@ -75,6 +75,11 @@
 
 // One day in tenths-of-a-second
 #define SEED_UPDATE_INTERVAL 864000L
+#define EE_PRNG_SEED_LOC ((void*)0)
+
+#ifdef SW_TRIM
+#define EE_TRIM_LOC ((void*)4)
+#endif
 
 // clock solenoid pins
 #define P0 0
@@ -95,12 +100,11 @@ unsigned long q_random() {
 static void updateSeed() {
   // Don't bother exercising the eeprom if the seed hasn't changed
   // since last time.
-  if (((long)eeprom_read_dword(0)) == seed) return;
-  eeprom_write_dword(0, seed);
+  if (((long)eeprom_read_dword(EE_PRNG_SEED_LOC)) == seed) return;
+  eeprom_write_dword(EE_PRNG_SEED_LOC, seed);
 }
 
 volatile static unsigned char sleep_miss_counter = 0;
-volatile static unsigned char cycle_pos;
 
 static unsigned long seed_update_timer;
 void doSleep() {
@@ -147,15 +151,30 @@ void doTick() {
 }
 
 ISR(TIMER0_COMPA_vect) {
+  static unsigned char cycle_pos = 0;
+#ifdef SW_TRIM
+  static unsigned long trim_pos = 0;
+#endif
+
+  int offset = 0;
+#ifdef SW_TRIM
+  // This is how many crystal cycles we just went through.
+  unsigned long crystal_cycles = OCR0A;
+  if (trim_pos < crystal_cycles) {
+  	trim_pos += 10000000; // ten million - the correction factor is tenths-of-a-ppm
+	offset = (int)eeprom_read_word(EE_TRIM_LOC);
+  }
+#endif
+
   // This is the magic for fractional counting.
   // Alternate between adding an extra count and
   // not adding one. This means that the intervals
   // are not uniform, but it's only by 2 ms or so,
   // which won't be noticable for this application.
   if (++cycle_pos == CLOCK_NUM_LONG_CYCLES)
-    OCR0A = CLOCK_BASIC_CYCLE;
+    OCR0A = CLOCK_BASIC_CYCLE + offset;
   if (cycle_pos >= CLOCK_CYCLES) {
-    OCR0A = CLOCK_BASIC_CYCLE + 1;
+    OCR0A = CLOCK_BASIC_CYCLE + 1 + offset;
     cycle_pos = 0;
   }
 
@@ -187,7 +206,7 @@ void main() {
   PORTB = 0; // Initialize all pins low.
 
   // Try and perturb the PRNG as best as we can
-  seed = (long)eeprom_read_dword(0);
+  seed = (long)eeprom_read_dword(EE_PRNG_SEED_LOC);
   // it can't be all 0 or all 1
   if (seed == 0 || ((seed & M) == M)) seed=0x12345678L;
   q_random(); // perturb it once...
@@ -199,7 +218,6 @@ void main() {
   // Set up the initial state of the timer.
   OCR0A = CLOCK_BASIC_CYCLE + 1;
   TCNT0 = 0;
-  cycle_pos = 0;
 
   // Don't forget to turn the interrupts on.
   sei();
