@@ -20,7 +20,7 @@
 
 #include "base.h"
 
-// We need to remove 4 minutes 56 seconds every day.
+// We need to remove 3 minutes 56 seconds every day.
 // That fraction is 366 + 6/59.
 // This is the whole number
 #define BASE_CYCLE_LENGTH (366)
