@@ -100,8 +100,7 @@ unsigned long q_random() {
 static void updateSeed() {
   // Don't bother exercising the eeprom if the seed hasn't changed
   // since last time.
-  if (((long)eeprom_read_dword(EE_PRNG_SEED_LOC)) == seed) return;
-  eeprom_write_dword(EE_PRNG_SEED_LOC, seed);
+  eeprom_update_dword(EE_PRNG_SEED_LOC, seed);
 }
 
 volatile static unsigned char sleep_miss_counter = 0;
