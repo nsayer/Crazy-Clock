@@ -164,6 +164,7 @@ ISR(TIMER0_COMPA_vect) {
   	trim_pos += 10000000; // ten million - the correction factor is tenths-of-a-ppm
 	offset = (int)eeprom_read_word(EE_TRIM_LOC);
   }
+  trim_pos -= crystal_cycles;
 #endif
 
   // This is the magic for fractional counting.
