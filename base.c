@@ -49,6 +49,7 @@
 #include <avr/cpufunc.h>
 #include <util/delay.h>
 #include <util/atomic.h>
+#include <stdlib.h>
 
 #include "base.h"
 
@@ -105,7 +106,14 @@ static void updateSeed() {
 
 volatile static unsigned char sleep_miss_counter = 0;
 
+#ifdef SW_TRIM
+volatile int trim_value;
+volatile unsigned long trim_cycles;
+volatile char trim_offset;
+#endif
+
 static unsigned long seed_update_timer;
+
 void doSleep() {
 
   if (--seed_update_timer == 0) {
@@ -155,15 +163,17 @@ ISR(TIMER0_COMPA_vect) {
   static unsigned long trim_pos = 0;
 #endif
 
-  int offset = 0;
+  char offset = 0;
 #ifdef SW_TRIM
-  // This is how many crystal cycles we just went through.
-  unsigned long crystal_cycles = OCR0A;
-  if (trim_pos < crystal_cycles) {
-  	trim_pos += 10000000; // ten million - the correction factor is tenths-of-a-ppm
-	offset = (int)eeprom_read_word(EE_TRIM_LOC);
+  if (trim_value != 0) {
+    // This is how many crystal cycles we just went through.
+    unsigned long crystal_cycles = OCR0A;
+    if (trim_pos < crystal_cycles) {
+      trim_pos += trim_cycles; // how often do we nudge by 1 unit?
+      offset = trim_offset; // which direction?
+    }
+    trim_pos -= crystal_cycles;
   }
-  trim_pos -= crystal_cycles;
 #endif
 
   // This is the magic for fractional counting.
@@ -172,9 +182,9 @@ ISR(TIMER0_COMPA_vect) {
   // are not uniform, but it's only by 2 ms or so,
   // which won't be noticable for this application.
   if (++cycle_pos == CLOCK_NUM_LONG_CYCLES)
-    OCR0A = CLOCK_BASIC_CYCLE + offset;
+    OCR0A = ((char)CLOCK_BASIC_CYCLE) + offset;
   if (cycle_pos >= CLOCK_CYCLES) {
-    OCR0A = CLOCK_BASIC_CYCLE + 1 + offset;
+    OCR0A = ((char)(CLOCK_BASIC_CYCLE + 1)) + offset;
     cycle_pos = 0;
   }
 
@@ -204,6 +214,16 @@ void main() {
 
   DDRB = _BV(P0) | _BV(P1) | _BV(P_UNUSED); // all our pins are output.
   PORTB = 0; // Initialize all pins low.
+
+#ifdef SW_TRIM
+  // we pre-compute all of this stuff to save cycles later.
+  // These values never change after startup.
+  trim_value = (int)eeprom_read_word(EE_TRIM_LOC);
+  if (trim_value != 0) {
+    trim_cycles = 10000000 / abs(trim_value); // how often do we nudge by 1 unit?
+    trim_offset = (trim_value < 0)?-1:1; // signum - which direction?
+  }
+#endif
 
   // Try and perturb the PRNG as best as we can
   seed = (long)eeprom_read_dword(EE_PRNG_SEED_LOC);
