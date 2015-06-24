@@ -23,7 +23,7 @@
  * compensation drift given a reference pulse-per-second input, such as from
  * a GPS receiver.
  *
- * The code will set up timer 0 to count from the system clock, prescaled by 64.
+ * The code will set up timer 0 to count from the system clock, prescaled by 8.
  * An overflow interrupt will be used to extend the 16 bit timer counter
  * to 32 bits.
  *
@@ -36,7 +36,7 @@
  * We have to prescale the system clock because otherwise executing code will take
  * some number of ticks and throw things off. We still may wind up off by one or two
  * counts, and in order to minimize that impact, we need to run the test for a very,
- * very long time - almost 6 hours.
+ * very long time - almost an hour.
  *
  * Connect PB0 to a PPS source and connect PB1 to the anode of an LED (no series
  * resistor required if you use the clock pins). The clock must be powered by 3
@@ -51,20 +51,27 @@
 #include <avr/power.h>
 
 // in this many seconds, we expect to get this many counts
-#define SECONDS_COUNT 19532
-#define EXPECTED_COUNT 10000384
+// The value should be result in an EXPECTED_COUNT of around 10M for best results.
+#define SECONDS_COUNT (2442)
+#define EXPECTED_COUNT (4096LL * SECONDS_COUNT)
 
 // And this is where we write the delta
 #define EE_TRIM_LOC ((void*)4)
+
+volatile unsigned long second_counter = 0;
+
+ISR(PCINT0_vect) {
+  // We're using the pin change interrupt, so we need to count
+  // rising *and* falling edges
+  // We must do this as quickly as possible
+  if (++second_counter == 2 * SECONDS_COUNT)
+    TCCR0B = 0; // stop the clock
+}
 
 volatile unsigned long timer_high_bits = 0;
 
 ISR(TIM0_OVF_vect) {
   timer_high_bits += 0x100;
-}
-
-static inline unsigned char read_input_pin() {
-  return (PINB & _BV(PINB0))?1:0;
 }
 
 void main() {
@@ -79,32 +86,33 @@ void main() {
   TIMSK = _BV(TOIE0); // overflow interrupt only
   DDRB = _BV(DDB1) | _BV(DDB2); // PB0 is input, the rest output.
   PORTB = 0; // Initialize all pins low.
-
+  PCMSK = _BV(PCINT0); // PB0 is our PC interrupt source
+  GIMSK = _BV(PCIE); // turn on PPS interrupt
   sei(); // enable interrupts
+
+  for(second_counter = 0; second_counter < 20;); // wait for the interrupt system to count 10 seconds
+  // Do this quickly
+  TCCR0B = _BV(CS01); // prescale = 8 - turn on the clock
  
-  while(!read_input_pin()) ; // wait for a rising edge
   PORTB |= _BV(PB1); // light the LED
-  unsigned char last_state = 1;
-  unsigned int rising_edges = 0;
 
-  TCCR0B = _BV(CS01) | _BV(CS00); // prescale = 64
+  second_counter = 0; 
+  while(TCCR0B != 0) ; // wait until the interrupt system stops the clock
+  GIMSK = 0; // disable the PC interrupt - we're done with it.
 
-  while(1) {
-    unsigned char pin_state = read_input_pin();
-    if (pin_state == last_state) continue;
-    last_state = pin_state;
-    if (pin_state == 0) continue; // we don't count falling edges
-
-    rising_edges++;
-    if (rising_edges == SECONDS_COUNT) break;
-  }
-  TCCR0B = 0; // stop the clock  
-  
+  // Fill in the low bits from the timer counter
   timer_high_bits |= TCNT0;
 
-  int delta = (int)(((long)timer_high_bits) - EXPECTED_COUNT);
+  // debug - write the actual count
+  eeprom_write_dword((void*)8, timer_high_bits);
 
-  eeprom_write_word(EE_TRIM_LOC, delta);
+  // how far off are we from the expected count?
+  long long delta = (((long long)timer_high_bits) - EXPECTED_COUNT);
+
+  // calculate the drift value - tenths of a ppm
+  int ppm = (int)((delta * 10000000LL) / EXPECTED_COUNT);
+
+  eeprom_write_word(EE_TRIM_LOC, ppm);
   PORTB = 0; // Turn the LED off
 
   while(1); // and we're done.
