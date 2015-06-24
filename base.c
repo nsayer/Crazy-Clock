@@ -107,7 +107,6 @@ static void updateSeed() {
 volatile static unsigned char sleep_miss_counter = 0;
 
 #ifdef SW_TRIM
-volatile int trim_value;
 volatile unsigned long trim_cycles;
 volatile char trim_offset;
 #endif
@@ -165,7 +164,7 @@ ISR(TIMER0_COMPA_vect) {
 
   char offset = 0;
 #ifdef SW_TRIM
-  if (trim_value != 0) {
+  if (trim_offset != 0) {
     // This is how many crystal cycles we just went through.
     unsigned long crystal_cycles = OCR0A;
     if (trim_pos < crystal_cycles) {
@@ -218,11 +217,12 @@ void main() {
 #ifdef SW_TRIM
   // we pre-compute all of this stuff to save cycles later.
   // These values never change after startup.
-  trim_value = (int)eeprom_read_word(EE_TRIM_LOC);
+  int trim_value = (int)eeprom_read_word(EE_TRIM_LOC);
   if (trim_value != 0) {
     trim_cycles = 10000000 / abs(trim_value); // how often do we nudge by 1 unit?
     trim_offset = (trim_value < 0)?-1:1; // signum - which direction?
-  }
+  } else
+    trim_offset = 0;
 #endif
 
   // Try and perturb the PRNG as best as we can
