@@ -27,11 +27,20 @@
  * An overflow interrupt will be used to extend the 16 bit timer counter
  * to 32 bits.
  *
+ * The pin change interrupt will be used to monitor the GPS PPS input. Since it's
+ * a pin change interrupt, it doesn't really matter whether the GPS uses rising or
+ * falling edges to signify the start of a second. When counting the interrupts,
+ * it will count twice as many, which should result in the correct number of full
+ * cycles.
+ *
+ * To insure the oscillator is stable, the firmware starts by waiting for 10 GPS
+ * seconds before beginning. The firmware will set PB1 high as an indication that
+ * the timing interval has begun.
+ *
  * Once the correct number of rising edges (after the first) have occurred, the timer
  * will be stopped and read. The expected count will be subtracted from the
  * actual count and the result used as the drift factor and written into
- * EEPROM. At that point, the other clock pin will be set high, and can be used
- * to turn on an LED to indicate completion.
+ * EEPROM. At that point, PB1 will be set low to indicate completion.
  *
  * We have to prescale the system clock because otherwise executing code will take
  * some number of ticks and throw things off. We still may wind up off by one or two
@@ -41,7 +50,9 @@
  * Connect PB0 to a PPS source and connect PB1 to the anode of an LED (no series
  * resistor required if you use the clock pins). The clock must be powered by 3
  * volts or less. The LED will light when the timing interval begins and extinguish
- * when it's over. When the LED goes out, you can upload the clock code and go.
+ * when it's over. When the LED goes out, you can upload the clock code (compiled with
+ * SW_TRIM turned on) and go. The clock should easily run within .5 ppm after calibration.
+ *
  */
 
 #include <avr/io.h>

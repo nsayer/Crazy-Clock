@@ -12,7 +12,7 @@ all: normal.hex crazy.hex early.hex lazy.hex martian.hex sidereal.hex tidal.hex 
 
 # Pick these two for a 32.768 kHz crystal.
 fuse: fuse32k
-OPTS = -DTHIRTYTWO_KHZ_CLOCK -DF_CPU=32768L
+OPTS = -DTHIRTYTWO_KHZ_CLOCK -DF_CPU=32768L -DSW_TRIM
 
 # Pick these two for a 4.00 MHz crystal. Note F_CPU is after pre-scale.
 #fuse: fuse4m
