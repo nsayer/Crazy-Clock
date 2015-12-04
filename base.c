@@ -19,9 +19,8 @@
  */
 
 /*
- * This is intended to run on an ATTiny45. Connect a 4.00 MHz or a 32.768 kHz
- * crystal and fuse it for the appropriate oscillator (set the divide-by-8 fuse for 4.x MHz),
- * no watchdog or brown-out detector.
+ * This is intended to run on an ATTiny45. Connect a 32.768 kHz crystal and fuse
+ * it for the low-frequency oscillator, no watchdog or brown-out detector.
  *
  * Connect PB0 and PB1 to the coil pins of a Lavet stepper coil of a clock movement
  * (with a series resistor and flyback diode to ground on each pin) and power it 
@@ -53,34 +52,17 @@
 
 #include "base.h"
 
-#if !(defined(FOUR_MHZ_CLOCK) ^ defined(THIRTYTWO_KHZ_CLOCK))
-#error Must pick either 4 MHz or 32 kHz option.
-#endif
-
-#if defined(FOUR_MHZ_CLOCK)
-// 4,000,000 divided by 128 is 31,250.
-// 31,250 divided by (64 * 10) is a divisor of 48 53/64, which is 49*53 + 48*11
-#define CLOCK_CYCLES (64)
-// Don't forget to decrement the OCR0A value - it's 0 based and inclusive
-#define CLOCK_BASIC_CYCLE (48 - 1)
-// a "long" cycle is CLOCK_BASIC_CYCLE + 1
-#define CLOCK_NUM_LONG_CYCLES (53)
-#elif defined(THIRTYTWO_KHZ_CLOCK)
 // 32,768 divided by (64 * 10) yields a divisor of 51 1/5, which is 52 + 51*4
 #define CLOCK_CYCLES (5)
 // Don't forget to decrement the OCR0A value - it's 0 based and inclusive
 #define CLOCK_BASIC_CYCLE (51 - 1)
 // a "long" cycle is CLOCK_BASIC_CYCLE + 1
 #define CLOCK_NUM_LONG_CYCLES (1)
-#endif
 
 // One day in tenths-of-a-second
 #define SEED_UPDATE_INTERVAL 864000L
 #define EE_PRNG_SEED_LOC ((void*)0)
-
-#ifdef SW_TRIM
 #define EE_TRIM_LOC ((void*)4)
-#endif
 
 // clock solenoid pins
 #define P0 0
@@ -106,10 +88,8 @@ static void updateSeed() {
 
 volatile static unsigned char sleep_miss_counter = 0;
 
-#ifdef SW_TRIM
 volatile unsigned long trim_cycles;
 volatile char trim_offset;
-#endif
 
 static unsigned long seed_update_timer;
 
@@ -158,12 +138,9 @@ void doTick() {
 
 ISR(TIMER0_COMPA_vect) {
   static unsigned char cycle_pos = 0;
-#ifdef SW_TRIM
   static unsigned long trim_pos = 0;
-#endif
 
   char offset = 0;
-#ifdef SW_TRIM
   if (trim_offset != 0) {
     // This is how many crystal cycles we just went through.
     unsigned long crystal_cycles = OCR0A;
@@ -173,7 +150,6 @@ ISR(TIMER0_COMPA_vect) {
     }
     trim_pos -= crystal_cycles;
   }
-#endif
 
   // This is the magic for fractional counting.
   // Alternate between adding an extra count and
@@ -196,10 +172,6 @@ ISR(TIMER0_COMPA_vect) {
 extern void loop();
 
 void main() {
-#ifndef THIRTYTWO_KHZ_CLOCK
-  // change this so that we wind up with as near a 32 kHz CPU clock as possible.
-  clock_prescale_set(clock_div_128);
-#endif
   ADCSRA = 0; // DIE, ADC!!! DIE!!!
   ACSR = _BV(ACD); // Turn off analog comparator - but was it ever on anyway?
   power_adc_disable();
@@ -214,7 +186,6 @@ void main() {
   DDRB = _BV(P0) | _BV(P1) | _BV(P_UNUSED); // all our pins are output.
   PORTB = 0; // Initialize all pins low.
 
-#ifdef SW_TRIM
   // we pre-compute all of this stuff to save cycles later.
   // These values never change after startup.
   int trim_value = (int)eeprom_read_word(EE_TRIM_LOC);
@@ -223,7 +194,6 @@ void main() {
     trim_offset = (trim_value < 0)?-1:1; // signum - which direction?
   } else
     trim_offset = 0;
-#endif
 
   // Try and perturb the PRNG as best as we can
   seed = (long)eeprom_read_dword(EE_PRNG_SEED_LOC);
