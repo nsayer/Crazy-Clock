@@ -156,12 +156,14 @@ ISR(TIMER0_COMPA_vect) {
   // not adding one. This means that the intervals
   // are not uniform, but it's only by 2 ms or so,
   // which won't be noticable for this application.
-  if (++cycle_pos == CLOCK_NUM_LONG_CYCLES)
+  if (++cycle_pos >= CLOCK_CYCLES) cycle_pos = 0;
+
+  // because offset will change from 0 to +/- 1 for one cycle,
+  // that means we have to set OCR0A *every* time.
+  if (cycle_pos >= CLOCK_NUM_LONG_CYCLES)
     OCR0A = ((char)CLOCK_BASIC_CYCLE) + offset;
-  if (cycle_pos >= CLOCK_CYCLES) {
+  else
     OCR0A = ((char)(CLOCK_BASIC_CYCLE + 1)) + offset;
-    cycle_pos = 0;
-  }
 
   // Keep track of any interrupts we blew through.
   // Every increment here *should* be matched by
@@ -188,6 +190,8 @@ void main() {
 
   // we pre-compute all of this stuff to save cycles later.
   // These values never change after startup.
+  // The uninitialized value of 0xffff is actually rather harmless.
+  // It's the signed int -1, which speeds up the clock by 0.1 ppm.
   int trim_value = (int)eeprom_read_word(EE_TRIM_LOC);
   if (trim_value != 0) {
     trim_cycles = 10000000 / abs(trim_value); // how often do we nudge by 1 unit?
