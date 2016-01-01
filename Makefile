@@ -2,9 +2,6 @@
 # To use this, you use 'make init TYPE={the kind of clock you want}'
 # That will fuse, flash and seed the chip.
 #
-# BE CAREFUL! Make sure that the fuse: target is set to the correct
-# alternative for the crystal installed in your hardware. If you fuse
-# the chip wrong, you will BRICK it!
 
 all: calibrate.hex normal.hex crazy.hex early.hex lazy.hex martian.hex sidereal.hex tidal.hex vetinari.hex warpy.hex wavy.hex whacky.hex tuney.hex
 
@@ -49,7 +46,8 @@ clean:
 	rm -f *.o *.elf *.hex test-*
 
 
-# The 32 kHz variant is fused for the extra-low frequency oscillator and no prescaling.
+# The controller is fused for the extra-low frequency oscillator, no prescaling, and preserve
+# the EEPROM content over code updates (to preserve the trim factor and PRNG seed).
 fuse:
 	$(AVRDUDE) $(DUDE_OPTS) -U lfuse:w:0xe6:m -U hfuse:w:0xd7:m -U efuse:w:0xff:m
 
