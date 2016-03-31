@@ -3,7 +3,7 @@
 # That will fuse, flash and seed the chip.
 #
 
-all: calibrate.hex normal.hex crazy.hex early.hex lazy.hex martian.hex sidereal.hex tidal.hex vetinari.hex warpy.hex wavy.hex whacky.hex tuney.hex
+all: calibrate.hex normal.hex crazy.hex early.hex lazy.hex martian.hex sidereal.hex tidal.hex vetinari.hex warpy.hex wavy.hex whacky.hex tuney.hex zippy.hex
 
 # Change this as appropriate! Don't screw it up!
 
