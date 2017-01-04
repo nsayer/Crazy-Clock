@@ -173,7 +173,8 @@ ISR(TIMER0_COMPA_vect) {
 
 extern void loop();
 
-void main() {
+// main() is void, and we never return from it.
+void __ATTR_NORETURN__ main() {
   ADCSRA = 0; // DIE, ADC!!! DIE!!!
   ACSR = _BV(ACD); // Turn off analog comparator - but was it ever on anyway?
   power_adc_disable();
@@ -218,6 +219,7 @@ void main() {
 
   // Now hand off to the specific clock code
   while(1) loop();
+  __builtin_unreachable();
 
 }
 

@@ -25,7 +25,7 @@ CC = avr-gcc
 OBJCPY = avr-objcopy
 AVRDUDE = avrdude
 
-CFLAGS = -Os -g -mmcu=$(CHIP) -std=c99 $(OPTS) -ffreestanding -Wall
+CFLAGS = -Os -g -mmcu=$(CHIP) -std=c99 $(OPTS) -Wall -Wno-main
 
 DUDE_OPTS = -c $(PROG) -p $(CHIP) -B $(SPICLOCK)
 
