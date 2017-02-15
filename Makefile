@@ -15,6 +15,7 @@ PROG = usbtiny
 
 # Change this if you're not using a Tiny45
 CHIP = attiny45
+#CHIP = attiny44
 
 # The SPI clock must be less than the system clock divided by 6. A -B argument of 250 should
 # yield an SPI clock of around 4 kHz, which is fine. If your programmer doesn't respect -B,

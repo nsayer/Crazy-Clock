@@ -52,6 +52,10 @@
 
 #include "base.h"
 
+#if !defined(__AVR_ATtiny44__) && !defined(__AVR_ATtiny45__)
+#error Unsupported chip
+#endif
+
 // 32,768 divided by (64 * 10) yields a divisor of 51 1/5, which is 52 + 51*4
 #define CLOCK_CYCLES (5)
 // Don't forget to decrement the OCR0A value - it's 0 based and inclusive
@@ -65,9 +69,20 @@
 #define EE_TRIM_LOC ((void*)4)
 
 // clock solenoid pins
-#define P0 0
-#define P1 1
-#define P_UNUSED 2
+#ifdef __AVR_ATtiny44__
+#define CLOCK_PORT PORTA
+#define P0 _BV(PORTA5)
+#define P1 _BV(PORTA6)
+#define CLOCK_DDR DDRA
+// Our two clock pins are outputs, the rest don't matter.
+#define CLOCK_DDR_BITS (_BV(DDA5) | _BV(DDA6))
+#else
+#define CLOCK_PORT PORTB
+#define P0 _BV(PORTB0)
+#define P1 _BV(PORTB1)
+#define CLOCK_DDR DDRB
+#define CLOCK_DDR_BITS (_BV(DDB0) | _BV(DDB1))
+#endif
 
 // For a 32 kHz system clock speed, random() is too slow.
 // Found this at http://uzebox.org/forums/viewtopic.php?f=3&t=250
@@ -110,13 +125,6 @@ void doSleep() {
   }
   if (local_smc == 0)
     sleep_mode(); // this results in sleep_miss_counter being incremented.
-#ifdef DEBUG
-  else {
-    // indicate an overflow
-    PORTB |= _BV(P_UNUSED);
-    while(1); // lock up
-  }
-#endif
 }
 
 // How long is each tick pulse?
@@ -127,16 +135,16 @@ void doSleep() {
 
 // Each call to doTick() will "eat" a single one of our interrupt "ticks"
 void doTick() {
-  static unsigned char lastTick = P0;
+  static unsigned char lastTick; // Doesn't matter that it's uninitialized.
 
-  PORTB |= _BV(TICK_PIN);
+  CLOCK_PORT |= _BV(TICK_PIN);
   _delay_ms(TICK_LENGTH);
-  PORTB &= ~ _BV(TICK_PIN);
+  CLOCK_PORT &= ~ _BV(TICK_PIN);
   lastTick = TICK_PIN;
   doSleep(); // eat the rest of this tick
 }
 
-ISR(TIMER0_COMPA_vect) {
+ISR(TIM0_COMPA_vect) {
   static unsigned char cycle_pos = 0;
   static unsigned long trim_pos = 0;
 
@@ -182,12 +190,16 @@ void __ATTR_NORETURN__ main() {
   power_timer1_disable();
   TCCR0A = _BV(WGM01); // mode 2 - CTC
   TCCR0B = _BV(CS01) | _BV(CS00); // prescale = 64
+#ifdef __AVR_ATtiny44__
+  TIMSK0 = _BV(OCIE0A); // OCR0A interrupt only.
+#else
   TIMSK = _BV(OCIE0A); // OCR0A interrupt only.
+#endif
   
   set_sleep_mode(SLEEP_MODE_IDLE);
 
-  DDRB = _BV(P0) | _BV(P1) | _BV(P_UNUSED); // all our pins are output.
-  PORTB = 0; // Initialize all pins low.
+  CLOCK_DDR = CLOCK_DDR_BITS;
+  CLOCK_PORT = 0; // Initialize all pins low.
 
   // we pre-compute all of this stuff to save cycles later.
   // These values never change after startup.
