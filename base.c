@@ -71,15 +71,15 @@
 // clock solenoid pins
 #ifdef __AVR_ATtiny44__
 #define CLOCK_PORT PORTA
-#define P0 _BV(PORTA5)
-#define P1 _BV(PORTA6)
+#define P0 PORTA5
+#define P1 PORTA6
 #define CLOCK_DDR DDRA
 // Our two clock pins are outputs, the rest don't matter.
 #define CLOCK_DDR_BITS (_BV(DDA5) | _BV(DDA6))
 #else
 #define CLOCK_PORT PORTB
-#define P0 _BV(PORTB0)
-#define P1 _BV(PORTB1)
+#define P0 PORTB0
+#define P1 PORTB1
 #define CLOCK_DDR DDRB
 #define CLOCK_DDR_BITS (_BV(DDB0) | _BV(DDB1))
 #endif
