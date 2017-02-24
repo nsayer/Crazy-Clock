@@ -74,14 +74,17 @@
 #define P0 PORTA5
 #define P1 PORTA6
 #define CLOCK_DDR DDRA
-// Our two clock pins are outputs, the rest don't matter.
-#define CLOCK_DDR_BITS (_BV(DDA5) | _BV(DDA6))
+// To minimize power consumption all pins must be output.
+#define CLOCK_DDR_BITS (_BV(DDA0) | _BV(DDA1) | _BV(DDA2) | _BV(DDA3) | _BV(DDA4) | _BV(DDA5) | _BV(DDA6) | _BV(DDA7))
+#define EXTRA_DDR DDRB
+#define EXTRA_DDR_BITS (_BV(DDB2))
 #else
 #define CLOCK_PORT PORTB
 #define P0 PORTB0
 #define P1 PORTB1
 #define CLOCK_DDR DDRB
-#define CLOCK_DDR_BITS (_BV(DDB0) | _BV(DDB1))
+// To minimize power consumption all pins must be output.
+#define CLOCK_DDR_BITS (_BV(DDB0) | _BV(DDB1) | _BV(DDB2))
 #endif
 
 // For a 32 kHz system clock speed, random() is too slow.
@@ -199,6 +202,9 @@ void __ATTR_NORETURN__ main() {
   set_sleep_mode(SLEEP_MODE_IDLE);
 
   CLOCK_DDR = CLOCK_DDR_BITS;
+#ifdef __AVR_ATtiny44__
+  EXTRA_DDR = EXTRA_DDR_BITS;
+#endif
   CLOCK_PORT = 0; // Initialize all pins low.
 
   // we pre-compute all of this stuff to save cycles later.
