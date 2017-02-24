@@ -33,12 +33,23 @@ void main() {
   ACSR = _BV(ACD); // Turn off analog comparator - but was it ever on anyway?
   power_adc_disable();
   power_usi_disable();
+#ifdef __AVR_ATtiny44__
+  power_timer0_disable();
+  TCCR1A = _BV(COM1A0); // toggle OC1A
+  TCCR1B = _BV(WGM12) | _BV(CS10); // mode 4 - CTC, prescale = 1 (none)
+  OCR1A = 0; // as fast as possible
+  DDRA = 0xff; // All unused pins are output
+  DDRB = _BV(DDB2);
+  PORTA = 0; // Initialize all pins low.
+  PORTB = 0; // Initialize all pins low.
+#else
   power_timer1_disable();
   TCCR0A = _BV(COM0A0) | _BV(WGM01); // mode 2 - CTC, toggle OC0A
   TCCR0B = _BV(CS00); // prescale = 1 (none)
   OCR0A = 0; // as fast as possible
-  DDRB = _BV(DDB0) | _BV(DDB1) | _BV(DDB2); // all our pins are output.
+  DDRB = _BV(DDB0) | _BV(DDB1) | _BV(DDB2); // all unused pins are output
   PORTB = 0; // Initialize all pins low.
+#endif
 
   // And we're done.
   while(1);
