@@ -48,6 +48,7 @@
  * be extremely close.
  */
 
+#include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -66,6 +67,6 @@ void doTick() {
 }
 
 int main(int argc, char **argv) {
-  srandomdev();
+  srandom(time(NULL));
   while(1) loop();
 }
