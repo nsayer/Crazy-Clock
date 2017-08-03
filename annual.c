@@ -1,6 +1,6 @@
 /*
 
- Whacky Clock
+ Annual Clock
  Copyright 2014 Nicholas W. Sayer
  
  This program is free software; you can redistribute it and/or modify
@@ -18,22 +18,9 @@
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-/*
- * This code will keep a long-term average pulse rate of 1 Hz,
- * but will do so by picking a random tenth-of-a-second within each second for the ticking.
- *
- */
+// This clock needs to run 730 times too slow - 12 hours worth of ticking in 365 days.
 
-#include "base.h"
+#define WHOLE 7299
+#define NUMERATOR 0
 
-void loop() {
-  while(1){
-    unsigned char tick_position = q_random() % IRQS_PER_SECOND; //0-9, inclusive
-
-    for(unsigned char i = 0; i < IRQS_PER_SECOND; i++)
-      if (i == tick_position)
-        doTick();
-      else
-        doSleep();
-  }
-}
+#include "slow.h"

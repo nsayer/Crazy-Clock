@@ -1,6 +1,6 @@
 /*
 
- Martian Clock for Arduino
+ Martian Clock
  Copyright 2014 Nicholas W. Sayer
  
  This program is free software; you can redistribute it and/or modify
@@ -17,8 +17,6 @@
  with this program; if not, write to the Free Software Foundation, Inc.,
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-
-#include "base.h"
 
 // We need to add 39 minutes 36 seconds every day. That's means the
 // fraction is 36 + 12/33.

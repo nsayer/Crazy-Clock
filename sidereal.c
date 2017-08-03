@@ -1,6 +1,6 @@
 /*
 
- Sidereal Clock for Arduino
+ Sidereal Clock
  Copyright 2014 Nicholas W. Sayer
  
  This program is free software; you can redistribute it and/or modify
@@ -17,8 +17,6 @@
  with this program; if not, write to the Free Software Foundation, Inc.,
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-
-#include "base.h"
 
 // We need to remove 3 minutes 56 seconds every day.
 // That fraction is 366 + 6/59.

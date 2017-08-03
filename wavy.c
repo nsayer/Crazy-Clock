@@ -1,6 +1,6 @@
 /*
 
- Wavy Clock for Arduino
+ Wavy Clock
  Copyright 2014 Nicholas W. Sayer
  
  This program is free software; you can redistribute it and/or modify

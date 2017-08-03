@@ -1,6 +1,6 @@
 /*
 
- Drifting Clock for Arduino
+ Drifting Clock common code
  Copyright 2014 Nicholas W. Sayer
  
  This program is free software; you can redistribute it and/or modify
@@ -23,6 +23,10 @@
  * time at a constant rate. To build one, you just set the defines
  * and include this file.
  *
+ * The way the math works is that we need to figure out after how
+ * many cycles do we want to add or remove a count. This system
+ * allows that number to be a fraction.
+ *
  * The macros required are:
  *
  * CYCLE_COUNT - the denominator of the fractional part
@@ -31,6 +35,7 @@
  * RUN_SLOW - define this to make the clock run slow, leave it out to run fast
  */
 
+#include "base.h"
 
 void loop() {
   unsigned int inner_counter = 0; // this counts to either BASE_CYCLE or BASE_CYCLE+1 before we adjust tick_counter.
