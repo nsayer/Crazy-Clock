@@ -1,7 +1,7 @@
 /*
 
  Slow Clock common code
- Copyright 2014 Nicholas W. Sayer
+ Copyright 2018 Nicholas W. Sayer
  
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -23,9 +23,10 @@
 /*
 
 This is the base for the clocks that run very slowly. To define one of
-these clocks, you must specify how many 10 Hz periods occur between ticks.
-In general, if you want a clock that runs N times slower than normal, then
-the correct value is (N - 1) * 10.
+these clocks, you must specify how many 10 Hz periods occur *between* ticks
+(remember that a tick implies a concurrent sleep - it takes the same amount
+of time).  In general, if you want a clock that runs N times slower than normal,
+then the correct value is (N * 10) - 1.
 
 This value can be a fraction, if desired. If it is, then the fractional
 value will be spread across the count in the customary manner.

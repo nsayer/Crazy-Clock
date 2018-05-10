@@ -64,6 +64,6 @@ seed:
 init: fuse flash seed
 
 test:
-	gcc -c -D_BSD_SOURCE -std=c99 -DUNIT_TEST -O -o test-$(TYPE).o $(TYPE).c
-	gcc -c -D_BSD_SOURCE -std=c99 -O test.c
+	gcc -c -D_DEFAULT_SOURCE -std=c99 -DUNIT_TEST -O -o test-$(TYPE).o $(TYPE).c
+	gcc -c -D_DEFAULT_SOURCE -std=c99 -O test.c
 	gcc -o test-$(TYPE) test.o test-$(TYPE).o
