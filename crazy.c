@@ -80,7 +80,7 @@ static void our_tick() {
 // That makes a data segment, because AVR-GCC is too stupid to put that
 // constant data into flash. So for these two methods, back down the
 // optimization to O1.
-static void __attribute__((optimize("O1"))) build_list(int which) {
+static void build_list(int which) {
   int start = 0, end = 0;
   switch(which) {
     case 0:
@@ -109,7 +109,7 @@ static void __attribute__((optimize("O1"))) build_list(int which) {
   }
 }
 
-static void __attribute__((optimize("O1"))) shuffle_list(int which) {
+static void shuffle_list(int which) {
   int start = 0, end = 0;
   switch(which) {
     case 0:
