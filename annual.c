@@ -18,9 +18,9 @@
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-// This clock needs to run 730 times too slow - 12 hours worth of ticking in 365 days.
+// This clock needs to run 730.5 times too slow - 12 hours worth of ticking in 365.25 days.
 
-#define WHOLE 7299
+#define WHOLE 7304
 #define NUMERATOR 0
 
 #include "slow.h"
