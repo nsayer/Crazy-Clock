@@ -20,7 +20,7 @@
 
 // This clock needs to run 14 times too slow - 12 hours worth of ticking in 7 days.
 
-#define WHOLE 149
+#define WHOLE 139
 #define NUMERATOR 0
 
 #include "slow.h"
