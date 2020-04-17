@@ -53,10 +53,12 @@ PROGMEM const unsigned char shave_table[] = { 27, 3, 1, 1, 3, 7, 3, 27, 0 };
 PROGMEM const unsigned char backbeat_table[] = { 36, 5, 1, 7, 5, 1, 7, 5, 1, 7, 5, 1, 36, 0 };
 // SOS in morse
 PROGMEM const unsigned char sos_table[] = { 23, 2, 2, 4, 6, 6, 8, 2, 2, 35, 0};
+// Star Wars Imperial March
+PROGMEM const unsigned char imperialmarch_table[] = { 32, 5, 5, 5, 2, 1, 5, 2, 1, 32, 0};
 
-PROGMEM PGM_VOID_P const song_table[] = { (PGM_VOID_P)&shave_table, (PGM_VOID_P)&backbeat_table, (PGM_VOID_P)&sos_table };
+PROGMEM PGM_VOID_P const song_table[] = { (PGM_VOID_P)&shave_table, (PGM_VOID_P)&backbeat_table, (PGM_VOID_P)&sos_table, (PGM_VOID_P)&imperialmarch_table };
 
-#define SONG_COUNT 3
+#define SONG_COUNT 4
 
 void loop() {
   while(1) {
