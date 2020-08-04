@@ -1,6 +1,6 @@
 /*
 
- Lunar (synodic) Clock
+ Lunar Sidereal Clock
  Copyright 2014 Nicholas W. Sayer
  
  This program is free software; you can redistribute it and/or modify
@@ -18,13 +18,14 @@
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-// This clock does 12 hours worth of ticking over the course of a synodic
-// month - that is, from full moon to full moon.
+// This clock does 12 hours worth of ticking over a sidereal month.
+// That is, the time it takes the moon to return to the same position
+// relative to the stars.
 
-// This clock needs to run 59.06 times too slow - 12 hours worth of ticking in 29.53 days.
+// This clock needs 12 hours worth of ticking in 27 days, 7:43:11.6.
 
-#define WHOLE 589
-#define NUMERATOR 3
-#define DENOMINATOR 5
+#define WHOLE 545
+#define NUMERATOR 4679
+#define DENOMINATOR 10800
 
 #include "slow.h"

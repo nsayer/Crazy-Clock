@@ -1,6 +1,6 @@
 /*
 
- Lunar (synodic) Clock
+ Lunar Anomalistic Clock
  Copyright 2014 Nicholas W. Sayer
  
  This program is free software; you can redistribute it and/or modify
@@ -18,13 +18,14 @@
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-// This clock does 12 hours worth of ticking over the course of a synodic
-// month - that is, from full moon to full moon.
+// This clock does 12 hours worth of ticking in the time the moon
+// passes through the perogee or apogee twice. This differs from a
+// synodic month because the lunar orbit precesses.
 
-// This clock needs to run 59.06 times too slow - 12 hours worth of ticking in 29.53 days.
+// This clock needs 12 hours worth of ticking in 27 days, 13:18:33.2.
 
-#define WHOLE 589
-#define NUMERATOR 3
-#define DENOMINATOR 5
+#define WHOLE 550
+#define NUMERATOR 983
+#define DENOMINATOR 10800
 
 #include "slow.h"
