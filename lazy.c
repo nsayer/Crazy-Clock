@@ -35,7 +35,7 @@ void loop() {
       doSleep();
     }
       
-    for(unsigned char i = 0; i < tick_count * 8; i++)
+    for(unsigned short i = 0; i < tick_count * 8; i++)
       doSleep();
   }
 }
