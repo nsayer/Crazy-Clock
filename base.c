@@ -131,7 +131,7 @@ void doSleep() {
 }
 
 // How long is each tick pulse?
-#define TICK_LENGTH (35)
+#define TICK_LENGTH (30)
 
 // This will alternate the ticks
 #define TICK_PIN (lastTick == P0?P1:P0)
